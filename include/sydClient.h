@@ -1,3 +1,5 @@
+#ifndef SYDCLIENT_H
+#define SYDCLIENT_H
 
 /**
 * Stablish session between client and server.
@@ -32,3 +34,5 @@ void delete_file(char *file);
 * Close session with server
 */
 void close_session();
+
+#endif

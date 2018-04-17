@@ -1,3 +1,6 @@
+#ifndef SYDSERVER_H
+#define SYDSERVER_H
+
 struct client {
 	int devices[2];
 	char userid[MAXNAME];
@@ -28,3 +31,5 @@ void receive_file(char *file);
 * file – filename.ext
 */
 void send_file(char *file);
+
+#endif
