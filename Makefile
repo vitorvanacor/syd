@@ -14,12 +14,12 @@ all: $(CLIENTEXE) $(SERVEREXE)
 	@echo " ";
 	@echo " Done!"
 
-$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/sydUtil.o
+$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o
 	@echo " ";
 	@echo " Link client:";
 	$(CC) $^ -o $(CLIENTEXE)
 
-$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/sydUtil.o
+$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o
 	@echo " ";
 	@echo " Link server:";
 	$(CC) $^ -o $(SERVEREXE)
@@ -39,9 +39,14 @@ $(BUILDDIR)/sydUtil.o: $(SRCDIR)/sydUtil.cpp
 	@echo " Compile util:";
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
+$(BUILDDIR)/Socket.o: $(SRCDIR)/Socket.cpp
+	@echo " ";
+	@echo " Compile Socket:";
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
 # Tests
-tester:
-  $(CC) $(CFLAGS) test/tester.cpp $(INC) $(LIB) -o bin/tester.exe
+#tester:
+#	$(CC) $(CFLAGS) test/tester.cpp $(INC) $(LIB) -o bin/tester.exe
 
 clean:
 	@echo " Cleaning...";
