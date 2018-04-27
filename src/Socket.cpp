@@ -20,6 +20,8 @@ Socket::Socket(int port)
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
     bzero(&(address.sin_zero), 8);
+
+    socklen = sizeof(struct sockaddr_in);
 }
 
 Socket::~Socket()
@@ -31,8 +33,7 @@ void Socket::bind_server()
 {
     address.sin_addr.s_addr = INADDR_ANY;
     bzero(&(address.sin_zero), 8);    
-
-    if (bind(descriptor, (struct sockaddr *) &address, sizeof(struct sockaddr)) < 0)
+    if (bind(descriptor, (struct sockaddr *) &address, socklen))
     {
         throw runtime_error("ERROR: Bind failed");
     }
@@ -40,28 +41,26 @@ void Socket::bind_server()
 
 string Socket::receive()
 {
-    char buffer[256];
-    socklen_t socklen = sizeof(struct sockaddr_in);
-    int n = recvfrom(descriptor, buffer, 256, 0, (struct sockaddr *) &sender_address, &socklen);
+    int n = recvfrom(descriptor, receive_buffer, 256, 0, (struct sockaddr *) &their_address, &socklen);
     if (n < 0)
     {
         throw runtime_error("ERROR: Failed to receive message");
     }
-    return string(buffer);
+    return string(receive_buffer);
 }
 
-void Socket::reply(string msg)
+void Socket::send(string msg)
 {
-    if (!sender_address.sin_port)
+    if (!their_address.sin_port)
     {
-        cout << "Reply only possible after receive" << endl;
+        cout << "Tried to send with their_address not set" << endl;
         return;
     }
-    const char* buffer = msg.c_str();
-    int n = sendto(descriptor, buffer, strlen(buffer), 0,(struct sockaddr *) &sender_address, sizeof(struct sockaddr));
+    send_buffer = msg.c_str();
+    int n = sendto(descriptor, send_buffer, strlen(send_buffer), 0,(struct sockaddr *) &their_address, socklen);
     if (n < 0)
     {
-        throw runtime_error("ERROR: Failed to reply");
+        throw runtime_error("ERROR: Failed to send");
     }
 }
 
@@ -75,25 +74,12 @@ void Socket::set_host(char* hostname)
     address.sin_addr = *((struct in_addr *)host->h_addr);
 }
 
-void Socket::send(string msg)
-{
-    const char* buffer = msg.c_str();
-    int n = sendto(descriptor, buffer, strlen(buffer), 0, (const struct sockaddr *) &address, sizeof(struct sockaddr_in));
+void Socket::send_to_host(string msg)
+{    
+    send_buffer = msg.c_str();
+    int n = sendto(descriptor, send_buffer, strlen(send_buffer), 0, (const struct sockaddr *) &address, socklen);
     if (n < 0)
     {
         throw runtime_error("ERROR: Failed to send message");
     }
-}
-
-string Socket::wait_reply()
-{
-    char buffer[256];
-    sockaddr_in server_address;
-    unsigned int socklen = sizeof(struct sockaddr_in);
-    int n = recvfrom(descriptor, buffer, 256, 0, (struct sockaddr *) &server_address, &socklen);
-    if (n < 0)
-    {
-        throw runtime_error("ERROR: Receive message failed");
-    }
-    return string(buffer);
 }

@@ -1,8 +1,20 @@
-#include <stdio.h>
+#include "sydUtil.h"
 
-#include "../include/sydUtil.h"
+#include <string>
+#include <iostream>
 
-void utilTest()
+using namespace std;
+
+void debug(string s, int line, const char* function)
 {
-    printf("Util test!");
+    cout << s;
+    if (line)
+    {
+        cout << " - line " << __LINE__;
+    }
+    if (function)
+    {
+        cout << " | " << function;
+    }
+    cout << endl;
 }

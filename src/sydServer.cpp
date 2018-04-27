@@ -1,23 +1,26 @@
 #include <string>
 #include <iostream>
+#include <vector>
 
-#include "Socket.h"
+#include "Socket.hpp"
+#include "MessageHeader.hpp"
+#include "sydUtil.h"
 
 using namespace std;
 
-#define PORT 4000
-
 int main(int argc, char *argv[])
 {
-    Socket sock = Socket(PORT);
+    Socket sock = Socket(4000);
     sock.bind_server();
     std::string msg;
     while (1)
     {
         cout << "Waiting for message..." << endl;
         msg = sock.receive();
-        cout << "Message received: " << msg << endl;
-        sock.reply("Server ACK");
+        cout << "Message received." << endl;
+        MessageHeader header = MessageHeader::parse(msg);
+        header.print();
+        sock.send("ACK");
         cout << "ACK sent." << endl;
     }
     return 0;

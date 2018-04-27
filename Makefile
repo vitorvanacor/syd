@@ -1,5 +1,5 @@
 # Main compiler 
-CC := g++
+CC := g++ -std=c++11
 
 SRCDIR := src
 BUILDDIR := build
@@ -14,12 +14,12 @@ all: $(CLIENTEXE) $(SERVEREXE)
 	@echo " ";
 	@echo " Done!"
 
-$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o
+$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/MessageHeader.o $(BUILDDIR)/sydUtil.o
 	@echo " ";
 	@echo " Link client:";
 	$(CC) $^ -o $(CLIENTEXE)
 
-$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o
+$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o $(BUILDDIR)/MessageHeader.o $(BUILDDIR)/sydUtil.o
 	@echo " ";
 	@echo " Link server:";
 	$(CC) $^ -o $(SERVEREXE)
@@ -42,6 +42,11 @@ $(BUILDDIR)/sydUtil.o: $(SRCDIR)/sydUtil.cpp
 $(BUILDDIR)/Socket.o: $(SRCDIR)/Socket.cpp
 	@echo " ";
 	@echo " Compile Socket:";
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+$(BUILDDIR)/MessageHeader.o: $(SRCDIR)/MessageHeader.cpp
+	@echo " ";
+	@echo " Compile MessageHeader:";
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 # Tests
