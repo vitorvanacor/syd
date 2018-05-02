@@ -1,4 +1,4 @@
-#include "Socket.h"
+#include "Socket.hpp"
 
 #include <string.h> // bzero
 #include <netdb.h> // hostent
