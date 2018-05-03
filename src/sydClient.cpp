@@ -1,10 +1,12 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
-#include <cstdio>
+#include <cstdio> 
+#include <fstream>
 
 #include "Socket.hpp"
 #include "MessageHeader.hpp"
+#include "File.hpp"
 #include "sydUtil.h"
 
 using namespace std;
@@ -48,6 +50,10 @@ int main(int argc, char *argv[])
     cout << "Message sent. Waiting reply..." << endl;
     string reply = sock.receive();
     cout << "Server reply: " << reply << endl;
+
+    File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/menes.txt");
+    char *buffer = file.FileToByteArray();
+    cout << buffer;
 
     return 0;
 }

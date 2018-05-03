@@ -14,7 +14,7 @@ all: $(CLIENTEXE) $(SERVEREXE)
 	@echo " ";
 	@echo " Done!"
 
-$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/MessageHeader.o $(BUILDDIR)/sydUtil.o
+$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/MessageHeader.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/File.o
 	@echo " ";
 	@echo " Link client:";
 	$(CC) $^ -o $(CLIENTEXE)
@@ -47,6 +47,11 @@ $(BUILDDIR)/Socket.o: $(SRCDIR)/Socket.cpp
 $(BUILDDIR)/MessageHeader.o: $(SRCDIR)/MessageHeader.cpp
 	@echo " ";
 	@echo " Compile MessageHeader:";
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+$(BUILDDIR)/File.o: $(SRCDIR)/File.cpp
+	@echo " ";
+	@echo " Compile File:";
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 # Tests
