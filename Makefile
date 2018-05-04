@@ -7,22 +7,22 @@ CLIENTEXE := bin/sydClient.exe
 SERVEREXE := bin/sydServer.exe
  
 CFLAGS := -g -Wall
-#LIB := -pthread
+LIB := -pthread
 INC := -I include
 
 all: $(CLIENTEXE) $(SERVEREXE)
 	@echo " ";
 	@echo " Done!"
 
-$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/MessageHeader.o $(BUILDDIR)/sydUtil.o
+$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/Connection.o
 	@echo " ";
 	@echo " Link client:";
-	$(CC) $^ -o $(CLIENTEXE)
+	$(CC) $^ -o $(CLIENTEXE) $(LIB)
 
-$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o $(BUILDDIR)/MessageHeader.o $(BUILDDIR)/sydUtil.o
+$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/Thread.o $(BUILDDIR)/ServerThread.o $(BUILDDIR)/Connection.o
 	@echo " ";
 	@echo " Link server:";
-	$(CC) $^ -o $(SERVEREXE)
+	$(CC) $^ -o $(SERVEREXE) $(LIB)
 
 $(BUILDDIR)/sydClient.o: $(SRCDIR)/sydClient.cpp
 	@echo " ";
@@ -44,9 +44,24 @@ $(BUILDDIR)/Socket.o: $(SRCDIR)/Socket.cpp
 	@echo " Compile Socket:";
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
-$(BUILDDIR)/MessageHeader.o: $(SRCDIR)/MessageHeader.cpp
+$(BUILDDIR)/Message.o: $(SRCDIR)/Message.cpp
 	@echo " ";
-	@echo " Compile MessageHeader:";
+	@echo " Compile Message:";
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+$(BUILDDIR)/Thread.o: $(SRCDIR)/Thread.cpp
+	@echo " ";
+	@echo " Compile Thread:";
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+$(BUILDDIR)/ServerThread.o: $(SRCDIR)/ServerThread.cpp
+	@echo " ";
+	@echo " Compile ServerThread:";
+	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
+
+$(BUILDDIR)/Connection.o: $(SRCDIR)/Connection.cpp
+	@echo " ";
+	@echo " Compile Connection:";
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 # Tests

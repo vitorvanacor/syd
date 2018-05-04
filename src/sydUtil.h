@@ -5,15 +5,10 @@
 
 using namespace std;
 
-#define TYPE_LEN 8
-#define SESSION_LEN 4
-#define SEQUENCE_LEN 4
-#define HEADER_LEN (TYPE_LEN + SESSION_LEN + SEQUENCE_LEN + 3)
-#define HEADER_SEPARATOR '|'
-#define HEADER_FILLER ' '
+#define DEFAULT_PORT 4000
+#define DEFAULT_HOSTNAME "localhost"
+#define DEFAULT_USERNAME "default_user"
 
-string mount_header(const char* type, const char* session, const char* sequence);
-
-void debug(string s, int line = 0, const char* function = NULL);
+void debug(string msg, const char* file = NULL, int line = 0);
 
 #endif

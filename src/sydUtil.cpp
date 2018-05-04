@@ -5,16 +5,15 @@
 
 using namespace std;
 
-void debug(string s, int line, const char* function)
+void debug(string msg, const char* file, int line)
 {
-    cout << s;
+    if (file)
+    {
+        cout << file;
+    }
     if (line)
     {
-        cout << " - line " << __LINE__;
+        cout << " (line " << line << ")";
     }
-    if (function)
-    {
-        cout << " | " << function;
-    }
-    cout << endl;
+    cout << ": " << msg << endl;
 }
