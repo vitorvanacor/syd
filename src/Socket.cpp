@@ -37,6 +37,8 @@ Socket::~Socket()
 void Socket::bind_server()
 {
     debug("Binding server");
+    
+    address.sin_addr.s_addr = INADDR_ANY;
     if (bind(id, (struct sockaddr *) &address, socklen))
     {
         throw runtime_error("ERROR: Bind failed");

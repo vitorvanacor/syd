@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
         if (command == "upload")
         {
             connection->send(Message::T_UPLOAD, "file_u.txt");
-            connection->receive_ack()
+            connection->receive_ack();
             //connection->send_file(File file("file_u.txt"));
         }
         else if (command == "download")
