@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define SOCKET_BUFFER_SIZE 2000
+
 class Socket
 {
 public:
@@ -15,19 +17,22 @@ public:
     ~Socket();
 
     void bind_server();
+    void set_host(string hostname);
+
+    void send(string msg);
     string receive();
 
-    void set_host(char* hostname);
-    void send_to_host(string msg);
-    void send(string msg);
-    string wait_reply();
+    sockaddr_in get_sender_address();
+    void set_dest_address(sockaddr_in new_dest_address);
 
 private:
-    int descriptor;
+    int id;
+    int port;
     struct sockaddr_in address;
-    struct sockaddr_in their_address;
-    hostent* host;
-    char receive_buffer[256];
+    struct sockaddr_in sender_address;
+    struct sockaddr_in dest_address;
+    struct hostent* host;
+    char receive_buffer[SOCKET_BUFFER_SIZE];
     const char* send_buffer;
 
     socklen_t socklen;

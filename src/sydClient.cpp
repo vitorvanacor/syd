@@ -5,55 +5,74 @@
 #include <fstream>
 
 #include "Socket.hpp"
-#include "MessageHeader.hpp"
+#include "Message.hpp"
 #include "File.hpp"
+#include "Connection.hpp"
 #include "sydUtil.h"
 
 using namespace std;
 
 int main(int argc, char *argv[])
 {	
-    string username;
-    string hostname;
-    int port;
+    srand(time(NULL));
+    string username = DEFAULT_USERNAME;
+    string hostname = DEFAULT_HOSTNAME;
+    int port = DEFAULT_PORT;
     
-    if (argc == 1)
+    if (argc > 1)
     {
-        username = "test_user";
-        hostname = "localhost";
-        port = 4000;
-        cout << "Using: " << username << " " << hostname << " " << port << endl;
+        username = string(argv[1]);
     }
-    else if (argc == 4)
+    if (argc > 2)
     {
-        username = argv[1];
-        hostname = argv[2];
+        hostname = string(argv[2]);
+    }
+    if (argc > 3)
+    {
         port = atoi(argv[3]);
     }
-    else
-    {
-        cout << "Usage: " << argv[0] << " user host port" << endl;
-        return 0;
-    }
     
-    Socket sock = Socket(4000);
-    sock.set_host("localhost");
-
-    string msg_type = "login!";
-    string session_id = std::to_string(rand()%1000);
-    string sequence = "0";
-
-    MessageHeader header = MessageHeader(msg_type, session_id, sequence);
-    string msg = header.to_string();
-
-    sock.send_to_host(msg);
-    cout << "Message sent. Waiting reply..." << endl;
-    string reply = sock.receive();
-    cout << "Server reply: " << reply << endl;
+    Connection* connection = new Connection(username, hostname, port);
 
     File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/menes.txt");
     char *buffer = file.FileToByteArray();
     cout << buffer;
 
+    // Main loop
+    string command;
+    while (true)
+    {
+        cout << "Enter command: ";
+        getline(cin, command);
+        if (command == "upload")
+        {
+            connection->send(Message::T_UPLOAD, "file_u.txt");
+            connection->receive_ack();
+            //connection->send_file(File file("file_u.txt"));
+        }
+        else if (command == "download")
+        {
+            connection->send(Message::T_DOWNLOAD, "file_d.txt");
+            //connection->receive_file();
+        }
+        else if (command == "list_server" || command == "ls")
+        {
+            connection->send(Message::T_LS);
+            connection->receive().print('<');
+        }
+        else if (command == "list_client")
+        {
+            cout << "Dummy list client" << endl;
+        }
+        else if (command == "exit")
+        {
+            cout << "(Dummy)Exiting..." << endl;
+            connection->send(Message::T_BYE);
+            connection->receive_ack();
+            break;
+        }
+    }
+    delete connection;
+    cout << "Exit successful" << endl;
     return 0;
 }
