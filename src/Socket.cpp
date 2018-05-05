@@ -5,7 +5,7 @@
 #include <unistd.h> // close
 #include <sys/socket.h> //socket
 
-#include <iostream>
+#include <iostream> //cout
 #include <stdexcept> //exceptions
 
 #include "sydUtil.h"
@@ -16,16 +16,17 @@ Socket::Socket(int _port)
 {
     port = _port;
     id = socket(AF_INET, SOCK_DGRAM, 0);
-    debug("Creating Socket " + to_string(id) + " at port " + to_string(port));
+    debug("Creating Socket " + to_string(id) + " at port " + to_string(port), __FILE__);
     if (id < 0)
     {
         throw runtime_error("ERROR: Socket creation failed");
     }
-    address.sin_family = AF_INET;
-    address.sin_port = htons(port);
-    bzero(&(address.sin_zero), 8);
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(port);
+    bzero(&(server_address.sin_zero), 8);
 
     socklen = sizeof(struct sockaddr_in);
+    host = NULL;
 }
 
 Socket::~Socket()
@@ -36,8 +37,9 @@ Socket::~Socket()
 
 void Socket::bind_server()
 {
-    debug("Binding server");
-    if (bind(id, (struct sockaddr *) &address, socklen))
+    debug("Binding server", __FILE__);
+    server_address.sin_addr.s_addr = INADDR_ANY;
+    if (bind(id, (struct sockaddr *) &server_address, socklen))
     {
         throw runtime_error("ERROR: Bind failed");
     }
@@ -45,52 +47,54 @@ void Socket::bind_server()
 
 void Socket::set_host(string hostname)
 {
-    debug("Setting host to " + hostname, __FILE__, __LINE__);
+    debug("Setting host to " + hostname, __FILE__);
     host = gethostbyname(hostname.c_str());
     if (host == NULL)
     {
         throw invalid_argument("ERROR: Invalid hostname");
     }
-    address.sin_addr = *((struct in_addr *)host->h_addr);
+    server_address.sin_addr = *((struct in_addr *)host->h_addr);
 }
 
 string Socket::receive()
 {
+    memset(receive_buffer, 0, sizeof(receive_buffer));
     int n = recvfrom(id, receive_buffer, SOCKET_BUFFER_SIZE, 0, (struct sockaddr *) &sender_address, &socklen);
     if (n < 0)
     {
         throw runtime_error("ERROR: Failed to receive message");
     }
-    debug("Bytes received: " + to_string(n));
+    debug("Bytes received: " + to_string(n), __FILE__);
     return string(receive_buffer);
 }
 
 
 void Socket::send(string bytes)
 {
-    sockaddr_in target_address;
+    struct sockaddr_in* target_address;
     if (dest_address.sin_port)
     {
-        debug("Sending bytes to dest...");
-        target_address = dest_address;
+        target_address = &dest_address;
     }
-    else if (address.sin_addr.s_addr)
+    else if (host)
     {
-        debug("Sending bytes to host...");
-        target_address = address;
+        debug("Target: "+string(host->h_name));
+        target_address = &server_address;
     }
     else
     {
         debug("ERROR: no host nor destination address set", __FILE__, __LINE__);
         return;
     }
+
+    debug("Sending "+to_string(bytes.length())+" bytes...", __FILE__);
     send_buffer = bytes.c_str();
-    int n = sendto(id, send_buffer, strlen(send_buffer), 0,(struct sockaddr *) &target_address, socklen);
+    int n = sendto(id, send_buffer, strlen(send_buffer), 0,(const struct sockaddr *) target_address, socklen);
     if (n < 0)
     {
         throw runtime_error("ERROR: Failed to send");
     }
-    debug("Bytes sent: " + to_string(n));
+    debug("Bytes sent: " + to_string(n), __FILE__);
 }
 
 sockaddr_in Socket::get_sender_address()
