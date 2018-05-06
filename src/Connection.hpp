@@ -2,6 +2,7 @@
 #define CONNECTION_H
 
 #include <string>
+#include<map>
 
 #include "Socket.hpp"
 #include "Message.hpp"
@@ -35,9 +36,8 @@ public:
     string session;
     string username;
 
-    string unconfirmed_message;
+    map<int,string> messages_sent;
     int last_sequence_sent;
-    int last_sequence_confirmed;
     int last_sequence_received;
 };
 

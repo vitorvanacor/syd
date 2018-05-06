@@ -28,7 +28,7 @@ public:
 private:
     int id;
     int port;
-    struct sockaddr_in address;
+    struct sockaddr_in server_address;
     struct sockaddr_in sender_address;
     struct sockaddr_in dest_address;
     struct hostent* host;

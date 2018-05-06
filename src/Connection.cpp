@@ -11,14 +11,16 @@ Connection::Connection(string username, string hostname, int port)
 { 
     this->session = to_string(rand()%10000);
     this->username = username;
-    debug("Connecting " + username + " to " + hostname + " (session " + session + ")" );
     this->sock = new Socket(port);
+    debug("Creating session "+session, __FILE__);
     init_sequences();
     
     this->sock->set_host(hostname);
     send(Message::T_SYN, username);
     receive_ack();
+    sock->set_dest_address(sock->get_sender_address());
     send_ack();
+    cout << "Successfully logged in as " << username << "!" << endl;
 }
 
 /* Server connection */
@@ -42,16 +44,17 @@ void Connection::accept_connection()
     last_sequence_received = 0;
     send_ack();
     receive_ack();
+    cout << username << " successfully logged in!" << endl;
 }
 
 void Connection::send(string type, string content)
 {
     // if content too big, break it and call smaller sends
-    int sequence = last_sequence_sent + 1;
-    Message msg = Message(session, sequence, type, content);
+    last_sequence_sent += 1;
+    Message msg = Message(session, last_sequence_sent, type, content);
     msg.print('>', username);
     sock->send(msg.to_string());
-    unconfirmed_message = msg.to_string();
+    messages_sent[last_sequence_sent] = msg.to_string();
 }
 
 void Connection::send_ack()
@@ -61,16 +64,19 @@ void Connection::send_ack()
 
 void Connection::resend()
 {
-    debug("Resending message "+to_string(last_sequence_sent));
-    sock->send(unconfirmed_message);
+    for (map<int,string>::iterator it = messages_sent.begin(); it != messages_sent.end(); ++it)
+    {
+        debug("Resending message "+to_string(it->first), __FILE__);
+        sock->send(string(it->second));
+    }
 }
 
 Message Connection::receive()
 {
-    Message msg = Message::parse(sock->receive());
-    msg.print('<', username);
     while (true)
     {
+        Message msg = Message::parse(sock->receive());
+        msg.print('<', username);
         if (msg.session == session)
         {
             if (msg.sequence == last_sequence_received + 1)
@@ -91,13 +97,17 @@ Message Connection::receive()
 
 void Connection::receive_ack()
 {
+    debug("Waiting for ACK "+to_string(last_sequence_sent)+"...");
     while (true)
     {
         Message msg = receive();
         {
-            if (msg.type == Message::T_ACK && msg.content == to_string(last_sequence_sent))
+            // TODO: consider that error or bye can be received too
+            if (msg.type == Message::T_ACK && stoi(msg.content) == last_sequence_sent)
             {
                 last_sequence_received += 1;
+                messages_sent.clear();
+                return;
             }
         }
     }
@@ -107,6 +117,7 @@ Message Connection::receive(string expected_type)
 {
     while (true)
     {
+        // TODO: consider that error or bye can be received too
         Message msg = receive();
         if (msg.type == expected_type)
         {
@@ -118,6 +129,5 @@ Message Connection::receive(string expected_type)
 void Connection::init_sequences()
 {
     last_sequence_sent = -1;
-    last_sequence_confirmed = -1;
     last_sequence_received = -1;
 }

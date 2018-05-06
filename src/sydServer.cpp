@@ -20,12 +20,11 @@ int main(int argc, char *argv[])
     map<string,ServerThread*> threads;
     Socket listener(DEFAULT_PORT);
     listener.bind_server();
-    debug("Listening...");
+    cout << "Listening on port " << port << " for connections..." << endl;
     while (1)
     {
         Message msg = Message::parse(listener.receive());
-        cout << "<===" << endl;
-        msg.print();
+        msg.print('<');
         if (msg.type == Message::T_SYN)
         {
             if (!threads.count(msg.session))

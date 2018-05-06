@@ -58,7 +58,8 @@ int main(int argc, char *argv[])
         else if (command == "list_server" || command == "ls")
         {
             connection->send(Message::T_LS);
-            connection->receive().print('<');
+            string server_list = connection->receive().content;
+            cout << server_list << endl;
         }
         else if (command == "list_client")
         {
