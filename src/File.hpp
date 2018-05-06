@@ -8,12 +8,20 @@ using namespace std;
 class File
 {
 public:
-    File(string name);
+    File(string path);
     ~File();
 
-    char* FileToByteArray();
+    int GetLength();
 
+    void FileToByteArray(char *buffer);
+
+    int FileLength();
+
+    string path;
     string name;
+    string extension;
+	string lastModified;
+    int length;
 
 };
 

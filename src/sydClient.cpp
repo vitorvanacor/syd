@@ -35,7 +35,8 @@ int main(int argc, char *argv[])
     Connection* connection = new Connection(username, hostname, port);
 
     File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/menes.txt");
-    char *buffer = file.FileToByteArray();
+    char buffer[file.GetLength()];
+    file.FileToByteArray(buffer);
     cout << buffer;
 
     // Main loop
