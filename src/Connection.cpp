@@ -12,10 +12,11 @@ Connection::Connection(string username, string hostname, int port)
     this->session = to_string(rand()%10000);
     this->username = username;
     this->sock = new Socket(port);
-    debug("Creating session "+session, __FILE__);
+    debug("Creating session "+this->session, __FILE__);
     init_sequences();
     
     this->sock->set_host(hostname);
+    this->sock->set_timeout(TIMEOUT_IN_SECONDS);
     send(Message::T_SYN, username);
     receive_ack();
     sock->set_dest_address(sock->get_sender_address());
@@ -31,6 +32,7 @@ Connection::Connection(string username, string session, Socket* new_socket)
     this->session = session;
     this->username = username;
     this->sock = new_socket;
+    this->sock->set_timeout(TIMEOUT_IN_SECONDS);
 }
 
 Connection::~Connection()
@@ -74,6 +76,7 @@ void Connection::resend()
 void Connection::receive_ack()
 {
     debug("Waiting for ACK "+to_string(last_sequence_sent)+"...");
+    sock->set_timeout(TIMEOUT_IN_SECONDS);
     while (true)
     {
         Message msg = receive();
@@ -91,6 +94,8 @@ void Connection::receive_ack()
 
 Message Connection::receive(string expected_type)
 {
+    debug("Waiting for "+expected_type+"...", __FILE__);
+    sock->set_timeout(TIMEOUT_IN_SECONDS);
     while (true)
     {
         // TODO: consider that error or bye can be received too
@@ -106,6 +111,7 @@ Message Connection::receive(string expected_type)
 Message Connection::receive_request()
 {
     debug("Waiting request from "+username+"...",__FILE__);
+    this->sock->set_timeout(0); // Never timeout
     while (true)
     {
         Message msg = receive();
@@ -121,22 +127,29 @@ Message Connection::receive()
 {
     while (true)
     {
-        Message msg = Message::parse(sock->receive());
-        msg.print('<', username);
-        if (msg.session == session)
+        try
         {
-            if (msg.sequence == last_sequence_received + 1)
+            Message msg = Message::parse(sock->receive());
+            msg.print('<', username);
+            if (msg.session == session)
             {
-                return msg;
+                if (msg.sequence == last_sequence_received + 1)
+                {
+                    return msg;
+                }
+                else
+                {
+                    resend();
+                }
             }
             else
             {
-                resend();
+                debug("Message received from wrong session");
             }
         }
-        else
+        catch (timeout_exception& e)
         {
-            debug("Message received from wrong session");
+            resend();
         }
     }
 }

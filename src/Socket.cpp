@@ -27,6 +27,10 @@ Socket::Socket(int _port)
 
     socklen = sizeof(struct sockaddr_in);
     host = NULL;
+
+    timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
+    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
 }
 
 Socket::~Socket()
@@ -62,6 +66,10 @@ string Socket::receive()
     int n = recvfrom(id, receive_buffer, SOCKET_BUFFER_SIZE, 0, (struct sockaddr *) &sender_address, &socklen);
     if (n < 0)
     {
+        if (errno == EWOULDBLOCK)
+        {
+            throw timeout_exception();
+        }
         throw runtime_error("ERROR: Failed to receive message");
     }
     debug("Bytes received: " + to_string(n), __FILE__);
@@ -95,6 +103,12 @@ void Socket::send(string bytes)
         throw runtime_error("ERROR: Failed to send");
     }
     debug("Bytes sent: " + to_string(n), __FILE__);
+}
+
+void Socket::set_timeout(int seconds)
+{
+    timeout.tv_sec = seconds;
+    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
 }
 
 sockaddr_in Socket::get_sender_address()
