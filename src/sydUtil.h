@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define DEBUG false
+#define DEBUG true
 
 #define DEFAULT_PORT 4000
 #define DEFAULT_HOSTNAME "localhost"

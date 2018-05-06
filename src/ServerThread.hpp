@@ -9,7 +9,10 @@ class ServerThread: public Thread
 {
 public:
     ServerThread(string username, string session, Socket* new_socket);
+    ~ServerThread();
     void* run();
+
+    bool is_open;
 
 private:
     Connection* connection;

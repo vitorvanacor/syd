@@ -22,19 +22,20 @@ public:
     void send_ack();
     void resend();
 
-    Message receive();
     Message receive(string expected_type);
+    Message receive_request();
     void receive_ack();
 
     static void* server_thread(void* void_this);
 
+    string username;
 
-//private:
+private:
+    Message receive();
     void init_sequences();
 
     Socket* sock;
     string session;
-    string username;
 
     map<int,string> messages_sent;
     int last_sequence_sent;

@@ -8,7 +8,7 @@ const string Message::MSG_SEPARATOR = "|";
 
 const string Message::T_SYN = "SYN";
 const string Message::T_ACK = "ACK";
-const string Message::T_LS = "S_LS";
+const string Message::T_LS = "LS";
 const string Message::T_DOWNLOAD = "DOWN";
 const string Message::T_UPLOAD = "UP";
 const string Message::T_BYE = "BYE";
@@ -33,6 +33,12 @@ string Message::to_string()
     msg += content; 
     msg += Message::MSG_SEPARATOR;
     return msg;
+}
+
+bool Message::is_request()
+{
+    return (type == Message::T_LS || type == Message::T_DOWNLOAD
+        || type == Message::T_UPLOAD || type == Message::T_BYE);
 }
 
 void Message::print(char direction, string username)

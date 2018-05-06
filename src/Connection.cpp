@@ -35,7 +35,7 @@ Connection::Connection(string username, string session, Socket* new_socket)
 
 Connection::~Connection()
 {
-    debug("Closing connection " + session + " (" + username + ")");
+    debug("Closing connection " + session);
     delete this->sock;
 }
 
@@ -44,7 +44,7 @@ void Connection::accept_connection()
     last_sequence_received = 0;
     send_ack();
     receive_ack();
-    cout << username << " successfully logged in!" << endl;
+    debug("Connection "+session+" established");
 }
 
 void Connection::send(string type, string content)
@@ -71,6 +71,52 @@ void Connection::resend()
     }
 }
 
+void Connection::receive_ack()
+{
+    debug("Waiting for ACK "+to_string(last_sequence_sent)+"...");
+    while (true)
+    {
+        Message msg = receive();
+        {
+            // TODO: consider that error or bye can be received too
+            if (msg.type == Message::T_ACK && stoi(msg.content) == last_sequence_sent)
+            {
+                last_sequence_received = msg.sequence;
+                messages_sent.clear();
+                return;
+            }
+        }
+    }
+}
+
+Message Connection::receive(string expected_type)
+{
+    while (true)
+    {
+        // TODO: consider that error or bye can be received too
+        Message msg = receive();
+        if (msg.type == expected_type)
+        {
+            last_sequence_received = msg.sequence;
+            return msg;
+        }
+    }
+}
+
+Message Connection::receive_request()
+{
+    debug("Waiting request from "+username+"...",__FILE__);
+    while (true)
+    {
+        Message msg = receive();
+        if (msg.is_request())
+        {
+            last_sequence_received = msg.sequence;
+            return msg;
+        }
+    }
+}
+
 Message Connection::receive()
 {
     while (true)
@@ -91,37 +137,6 @@ Message Connection::receive()
         else
         {
             debug("Message received from wrong session");
-        }
-    }
-}
-
-void Connection::receive_ack()
-{
-    debug("Waiting for ACK "+to_string(last_sequence_sent)+"...");
-    while (true)
-    {
-        Message msg = receive();
-        {
-            // TODO: consider that error or bye can be received too
-            if (msg.type == Message::T_ACK && stoi(msg.content) == last_sequence_sent)
-            {
-                last_sequence_received += 1;
-                messages_sent.clear();
-                return;
-            }
-        }
-    }
-}
-
-Message Connection::receive(string expected_type)
-{
-    while (true)
-    {
-        // TODO: consider that error or bye can be received too
-        Message msg = receive();
-        if (msg.type == expected_type)
-        {
-            return msg;
         }
     }
 }
