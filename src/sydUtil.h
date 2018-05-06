@@ -2,6 +2,7 @@
 #define SYDUTIL_H
 
 #include <string>
+#include <stdexcept>
 
 using namespace std;
 
@@ -16,10 +17,10 @@ void debug(string msg, const char* file = NULL, int line = 0);
 string get_filename(string filepath);
 string without_extension(string filename);
 
-class timeout_exception : public runtime_error
+class timeout_exception: public runtime_error
 {
 public:
-    timeout_exception(): runtime_error( "ERROR: Timeout" ) {}
+    timeout_exception(): runtime_error("ERROR: Timeout") { }
 };
 
 #endif
