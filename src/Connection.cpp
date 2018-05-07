@@ -50,8 +50,7 @@ void Connection::accept_connection()
 }
 
 void Connection::send(string type, string content)
-{
-    // if content too big, break it and call smaller sends
+{   
     last_sequence_sent += 1;
     Message msg = Message(session, last_sequence_sent, type, content);
     msg.print('>', username);
@@ -62,6 +61,43 @@ void Connection::send(string type, string content)
 void Connection::send_ack()
 {
     send(Message::T_ACK, to_string(last_sequence_received));
+}
+
+void Connection::send_file(char* fileByteArray, int fileLength)
+{
+    // Get byte array of file
+    //int fileLength = file.GetLength();
+    //char byteArray[fileLength];
+    //file.FileToByteArray(byteArray);
+    //cout << byteArray;
+
+    if(fileLength > PACKET_SIZE) 
+    {
+        char buffer[PACKET_SIZE];
+
+        // Break file
+        for(int i=0; i<fileLength; i += PACKET_SIZE) 
+        {
+            // Fill packet
+            for(int j=0; j<PACKET_SIZE; j++)
+                buffer[i] = fileByteArray[i];
+
+            send(Message::T_DATA, buffer);
+        }
+
+        // A little packet is missing
+        int sizeOfLittlePacket = fileLength % PACKET_SIZE;
+        if(sizeOfLittlePacket != 0){
+            char buffer[sizeOfLittlePacket];
+
+            // Fill packet
+            for(int i=0; i<sizeOfLittlePacket; i++)
+               buffer[i] = fileByteArray[i];
+
+            send(Message::T_DATA, buffer); 
+        }
+    } else
+        send(Message::T_DATA, fileByteArray);        
 }
 
 void Connection::resend()
@@ -150,6 +186,23 @@ Message Connection::receive()
         catch (timeout_exception& e)
         {
             resend();
+        }
+    }
+}
+
+void Connection::receive_file() {
+    debug("Waiting for data!");
+    sock->set_timeout(TIMEOUT_IN_SECONDS);
+    while (true)
+    {
+        Message msg = receive();
+        {
+            // TODO: consider that error or bye can be received too
+            if (msg.type == Message::T_DATA)
+            {
+                cout << "Content: " << msg.content << endl;
+                return;
+            }
         }
     }
 }

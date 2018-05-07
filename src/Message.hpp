@@ -32,6 +32,7 @@ public:
     static const string T_DOWNLOAD;
     static const string T_UPLOAD;
     static const string T_BYE;
+    static const string T_DATA;
 };
 
 #endif

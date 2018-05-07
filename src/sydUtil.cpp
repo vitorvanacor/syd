@@ -7,7 +7,7 @@ using namespace std;
 
 void debug(string msg, const char* file, int line)
 {
-    if (!DEBUG)
+    if (false)
     {
         return;
     }

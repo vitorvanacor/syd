@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
     Socket listener(DEFAULT_PORT);
     listener.bind_server();
     cout << "Listening on port " << port << " for connections..." << endl;
-    while (1)
+    while (true)
     {
         Message msg = Message::parse(listener.receive());
         free_closed_threads(threads);
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
                 Socket* new_socket = new Socket(port);
                 new_socket->set_dest_address(listener.get_sender_address());
                 ServerThread* new_thread = new ServerThread(msg.content, msg.session, new_socket);
-                new_thread->start();
+                new_thread->run();
                 threads[msg.session] = new_thread;
             }
             else

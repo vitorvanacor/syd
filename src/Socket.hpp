@@ -9,6 +9,7 @@
 using namespace std;
 
 #define SOCKET_BUFFER_SIZE 2000
+#define PACKET_SIZE 2000
 
 class Socket
 {

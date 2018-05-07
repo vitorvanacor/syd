@@ -4,6 +4,8 @@
 
 #include "sydUtil.h"
 
+#include <iostream>
+
 ServerThread::ServerThread(string username, string session, Socket* new_socket)
 {
     is_open = true;
@@ -30,7 +32,7 @@ void* ServerThread::run()
         else if (request.type == Message::T_UPLOAD)
         {
             connection->send_ack();
-            //connection->receive_file(request.content);
+            connection->receive_file();
         }
         else if (request.type == Message::T_DOWNLOAD)
         {

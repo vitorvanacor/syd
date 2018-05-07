@@ -34,10 +34,7 @@ int main(int argc, char *argv[])
     
     Connection* connection = new Connection(username, hostname, port);
 
-    File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/menes.txt");
-    char buffer[file.GetLength()];
-    file.FileToByteArray(buffer);
-    cout << buffer;
+    
 
     // Main loop
     string command;
@@ -47,9 +44,14 @@ int main(int argc, char *argv[])
         getline(cin, command);
         if (command == "upload")
         {
-            connection->send(Message::T_UPLOAD, "file_u.txt");
+            File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/menes.txt");
+            int fileLength = file.GetLength();
+            char byteArray[fileLength];
+            file.FileToByteArray(byteArray);
+            
+            connection->send(Message::T_UPLOAD, "menes.txt");
             connection->receive_ack();
-            //connection->send_file(File file("file_u.txt"));
+            connection->send_file(byteArray, fileLength);
         }
         else if (command == "download")
         {
