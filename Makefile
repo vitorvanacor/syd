@@ -77,3 +77,5 @@ clean:
 	@echo " Cleaning...";
 	$(RM) $(BUILDDIR)/*.o $(CLIENTEXE) $(SERVEREXE);
 	@echo " Cleaned!"
+
+rebuild: clean all

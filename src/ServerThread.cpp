@@ -1,19 +1,27 @@
 #include "ServerThread.hpp"
 
+#include <iostream>
+
 #include "sydUtil.h"
 
 ServerThread::ServerThread(string username, string session, Socket* new_socket)
 {
+    is_open = true;
     connection = new Connection(username, session, new_socket);
+}
+
+ServerThread::~ServerThread()
+{
+    delete connection;
 }
 
 void* ServerThread::run()
 {
     connection->accept_connection();
+    cout << connection->username << " successfully logged in!" << endl;
     while (true)
     {
-        debug("Waiting request from "+connection->username+"...",__FILE__);
-        Message request = connection->receive();
+        Message request = connection->receive_request();
         if (request.type == Message::T_LS)
         {
             connection->send(Message::T_LS, "file1.txt;2018-01-01 13:00:00|file2.txt;2018-02-01 15:00:00");
@@ -34,10 +42,8 @@ void* ServerThread::run()
             connection->receive_ack();
             break;
         }
-        else
-        {
-            debug("Message received ("+request.type+") is not a request");
-        }
     }
+    cout << "User " << connection->username << " logged out." << endl;
+    is_open = false;
     return NULL;
 }

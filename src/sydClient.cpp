@@ -59,8 +59,9 @@ int main(int argc, char *argv[])
         else if (command == "list_server" || command == "ls")
         {
             connection->send(Message::T_LS);
-            string server_list = connection->receive().content;
+            string server_list = connection->receive(Message::T_LS).content;
             cout << server_list << endl;
+            connection->send_ack();
         }
         else if (command == "list_client")
         {
@@ -68,13 +69,14 @@ int main(int argc, char *argv[])
         }
         else if (command == "exit")
         {
-            cout << "(Dummy)Exiting..." << endl;
+            cout << "Logging out..." << endl;
             connection->send(Message::T_BYE);
             connection->receive_ack();
+            connection->send_ack();
             break;
         }
     }
     delete connection;
-    cout << "Exit successful" << endl;
+    cout << "Successfully logged out!" << endl;
     return 0;
 }

@@ -14,6 +14,23 @@ unsigned int microseconds = 1000000;
 
 using namespace std;
 
+void free_closed_threads(map<string,ServerThread*> threads)
+{
+    auto it = threads.cbegin();
+    while (it != threads.cend())
+    {
+        if (!it->second->is_open)
+        {
+            delete it->second;
+            it = threads.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     int port = DEFAULT_PORT;
@@ -24,6 +41,7 @@ int main(int argc, char *argv[])
     while (1)
     {
         Message msg = Message::parse(listener.receive());
+        free_closed_threads(threads);
         msg.print('<');
         if (msg.type == Message::T_SYN)
         {

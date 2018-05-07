@@ -22,6 +22,7 @@ public:
     void send(string msg);
     string receive();
 
+    void set_timeout(int seconds);
     sockaddr_in get_sender_address();
     void set_dest_address(sockaddr_in new_dest_address);
 
@@ -35,6 +36,7 @@ private:
     char receive_buffer[SOCKET_BUFFER_SIZE];
     const char* send_buffer;
 
+    struct timeval timeout;
     socklen_t socklen;
 
 };

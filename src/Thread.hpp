@@ -6,7 +6,7 @@
 class Thread
 {
 public:
-    ~Thread();
+    virtual ~Thread() = 0;
 
     void start();
 

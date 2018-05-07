@@ -14,6 +14,7 @@ public:
 
     string to_string();
     void print(char direction = '\0', string username = "");
+    bool is_request();
 
     static Message parse(string msg);
 
