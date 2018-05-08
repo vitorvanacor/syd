@@ -7,22 +7,17 @@ using namespace std;
 
 class File
 {
-public:
+  public:
     File(string path);
     ~File();
 
-    int GetLength();
-
-    void FileToByteArray(char *buffer);
-
-    int FileLength();
+    string GetPath();
 
     string path;
     string name;
     string extension;
-	string lastModified;
+    string lastModified;
     int length;
-
 };
 
 #endif

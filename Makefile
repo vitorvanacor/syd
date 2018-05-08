@@ -19,7 +19,7 @@ $(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o
 	@echo " Link client:";
 	$(CC) $^ -o $(CLIENTEXE) $(LIB)
 
-$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/Thread.o $(BUILDDIR)/ServerThread.o $(BUILDDIR)/Connection.o
+$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/Thread.o $(BUILDDIR)/ServerThread.o $(BUILDDIR)/Connection.o $(BUILDDIR)/File.o
 	@echo " ";
 	@echo " Link server:";
 	$(CC) $^ -o $(SERVEREXE) $(LIB)

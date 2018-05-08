@@ -17,6 +17,7 @@ public:
     bool is_request();
 
     static Message parse(string msg);
+    static Message parseb(char* msg);
 
     string type;
     string session;
@@ -32,7 +33,8 @@ public:
     static const string T_DOWNLOAD;
     static const string T_UPLOAD;
     static const string T_BYE;
-    static const string T_DATA;
+    static const string T_FILE;
+    static const string T_EOF;
 };
 
 #endif

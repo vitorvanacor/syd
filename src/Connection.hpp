@@ -6,21 +6,23 @@
 
 #include "Socket.hpp"
 #include "Message.hpp"
+#include "File.hpp"
 
 using namespace std;
 
 class Connection
 {
-public:
+  public:
     Connection(string username, string host, int port);
-    Connection(string username, string session, Socket* new_socket);
+    Connection(string username, string session, Socket *new_socket);
     ~Connection();
 
     void accept_connection();
 
     void send(string type, string content = "");
+    void sendb(string stype, char *content = NULL);
     void send_ack();
-    void send_file(char* fileByteArray, int fileLength);
+    void send_file(File file);
     void resend();
 
     Message receive(string expected_type);
@@ -28,18 +30,18 @@ public:
     void receive_ack();
     void receive_file();
 
-    static void* server_thread(void* void_this);
+    static void *server_thread(void *void_this);
 
     string username;
 
-private:
+  private:
     Message receive();
     void init_sequences();
 
-    Socket* sock;
+    Socket *sock;
     string session;
 
-    map<int,string> messages_sent;
+    map<int, string> messages_sent;
     int last_sequence_sent;
     int last_sequence_received;
 };

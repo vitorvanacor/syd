@@ -12,7 +12,8 @@ const string Message::T_LS = "LS";
 const string Message::T_DOWNLOAD = "DOWN";
 const string Message::T_UPLOAD = "UP";
 const string Message::T_BYE = "BYE";
-const string Message::T_DATA = "DATA";
+const string Message::T_FILE = "FILE";
+const string Message::T_EOF = "EOF";
 
 Message::Message(string session, int sequence, string type, string content = "")
 {

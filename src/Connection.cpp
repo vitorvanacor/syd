@@ -1,20 +1,24 @@
-#include "Connection.hpp"
-
 #include <iostream>
+#include <string>
+#include <stdio.h>
+#include <string.h>
+#include <fstream>
 
+#include "Connection.hpp"
+#include "File.hpp"
 #include "sydUtil.h"
 
 using namespace std;
 
 /* Client connection */
 Connection::Connection(string username, string hostname, int port)
-{ 
-    this->session = to_string(rand()%10000);
+{
+    this->session = to_string(rand() % 10000);
     this->username = username;
     this->sock = new Socket(port);
-    debug("Creating session "+this->session, __FILE__);
+    debug("Creating session " + this->session, __FILE__);
     init_sequences();
-    
+
     this->sock->set_host(hostname);
     this->sock->set_timeout(TIMEOUT_IN_SECONDS);
     send(Message::T_SYN, username);
@@ -25,7 +29,7 @@ Connection::Connection(string username, string hostname, int port)
 }
 
 /* Server connection */
-Connection::Connection(string username, string session, Socket* new_socket)
+Connection::Connection(string username, string session, Socket *new_socket)
 {
     debug("New Connection: " + username + " (" + session + ")");
     init_sequences();
@@ -46,11 +50,11 @@ void Connection::accept_connection()
     last_sequence_received = 0;
     send_ack();
     receive_ack();
-    debug("Connection "+session+" established");
+    debug("Connection " + session + " established");
 }
 
 void Connection::send(string type, string content)
-{   
+{
     last_sequence_sent += 1;
     Message msg = Message(session, last_sequence_sent, type, content);
     msg.print('>', username);
@@ -63,55 +67,64 @@ void Connection::send_ack()
     send(Message::T_ACK, to_string(last_sequence_received));
 }
 
-void Connection::send_file(char* fileByteArray, int fileLength)
+void Connection::send_file(File file)
 {
-    // Get byte array of file
-    //int fileLength = file.GetLength();
-    //char byteArray[fileLength];
-    //file.FileToByteArray(byteArray);
-    //cout << byteArray;
+    char buffer[PACKET_SIZE];
+    FILE *file_ptr;
+    int total_send = 0;
 
-    if(fileLength > PACKET_SIZE) 
+    string file_path = file.GetPath();
+    file_ptr = fopen(file_path.c_str(), "rb+");
+
+    // File length
+    ifstream in(file_path, ifstream::ate | ifstream::binary);
+    int file_length = in.tellg();
+
+    int remaining_bytes = file_length;
+    
+    int file_index = 0;
+    while (remaining_bytes >= PACKET_SIZE)
     {
-        char buffer[PACKET_SIZE];
+        total_send += sizeof(buffer);
 
-        // Break file
-        for(int i=0; i<fileLength; i += PACKET_SIZE) 
-        {
-            // Fill packet
-            for(int j=0; j<PACKET_SIZE; j++)
-                buffer[i] = fileByteArray[i];
+        fread(buffer, sizeof(char), PACKET_SIZE, file_ptr);
+        send(Message::T_FILE, buffer);
+        receive_ack();
+        file_index += PACKET_SIZE;
+        remaining_bytes -= PACKET_SIZE;
+    }
+    if (remaining_bytes > 0)
+    {
+        char remainder_buffer[remaining_bytes];
+        fread(remainder_buffer, sizeof(char), remaining_bytes, file_ptr);
 
-            send(Message::T_DATA, buffer);
-        }
+        total_send += sizeof(remainder_buffer);
 
-        // A little packet is missing
-        int sizeOfLittlePacket = fileLength % PACKET_SIZE;
-        if(sizeOfLittlePacket != 0){
-            char buffer[sizeOfLittlePacket];
+        send(Message::T_FILE, remainder_buffer);
+        receive_ack();
+    }
 
-            // Fill packet
-            for(int i=0; i<sizeOfLittlePacket; i++)
-               buffer[i] = fileByteArray[i];
+    cout << "total_send: " << total_send << endl;
 
-            send(Message::T_DATA, buffer); 
-        }
-    } else
-        send(Message::T_DATA, fileByteArray);        
+    fclose(file_ptr);
+
+    // Send end of file
+    send(Message::T_EOF);
+    receive_ack();
 }
 
 void Connection::resend()
 {
-    for (map<int,string>::iterator it = messages_sent.begin(); it != messages_sent.end(); ++it)
+    for (map<int, string>::iterator it = messages_sent.begin(); it != messages_sent.end(); ++it)
     {
-        debug("Resending message "+to_string(it->first), __FILE__);
+        debug("Resending message " + to_string(it->first), __FILE__);
         sock->send(string(it->second));
     }
 }
 
 void Connection::receive_ack()
 {
-    debug("Waiting for ACK "+to_string(last_sequence_sent)+"...");
+    debug("Waiting for ACK " + to_string(last_sequence_sent) + "...");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
     while (true)
     {
@@ -130,7 +143,7 @@ void Connection::receive_ack()
 
 Message Connection::receive(string expected_type)
 {
-    debug("Waiting for "+expected_type+"...", __FILE__);
+    debug("Waiting for " + expected_type + "...", __FILE__);
     sock->set_timeout(TIMEOUT_IN_SECONDS);
     while (true)
     {
@@ -146,7 +159,7 @@ Message Connection::receive(string expected_type)
 
 Message Connection::receive_request()
 {
-    debug("Waiting request from "+username+"...",__FILE__);
+    debug("Waiting request from " + username + "...", __FILE__);
     this->sock->set_timeout(0); // Never timeout
     while (true)
     {
@@ -183,24 +196,51 @@ Message Connection::receive()
                 debug("Message received from wrong session");
             }
         }
-        catch (timeout_exception& e)
+        catch (timeout_exception &e)
         {
             resend();
         }
     }
 }
 
-void Connection::receive_file() {
+void Connection::receive_file()
+{
     debug("Waiting for data!");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
+    FILE *file_ptr = fopen("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/banana.jpg", "wb+");
+    char buffer[PACKET_SIZE];
+    int length = 0;
+
     while (true)
     {
+        debug("Waiting for data!");
         Message msg = receive();
         {
             // TODO: consider that error or bye can be received too
-            if (msg.type == Message::T_DATA)
+            if (msg.type == Message::T_FILE)
             {
-                cout << "Content: " << msg.content << endl;
+                last_sequence_received = msg.sequence;
+                //cout << "Content: " << msg.content << endl;
+
+                char *buffer = new char[msg.content.length() + 1]; //LEAK!!
+
+                //strcpy(buffer, msg.content.data()); vitor tirou. memcpy seria melhor
+                length += msg.content.length();
+
+                for (int i = 0; i < sizeof(buffer); i++)
+                    printf(" %d ", buffer[i]);
+
+                //fwrite(buffer, sizeof(char), sizeof(buffer), file_ptr); vitor tirou
+                fwrite(msg.content.data(), sizeof(char), sizeof(msg.content.data()), file_ptr);
+                send_ack();
+            }
+            else if (msg.type == Message::T_EOF)
+            {
+                last_sequence_received = msg.sequence;
+                cout << "End of File!" << endl;
+                cout << "received: " << length << endl;
+                fclose(file_ptr);
+                send_ack();
                 return;
             }
         }

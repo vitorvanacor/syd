@@ -1,11 +1,11 @@
 #include "Socket.hpp"
 
-#include <string.h> // bzero
-#include <netdb.h> // hostent
-#include <unistd.h> // close
+#include <string.h>     // bzero
+#include <netdb.h>      // hostent
+#include <unistd.h>     // close
 #include <sys/socket.h> //socket
 
-#include <iostream> //cout
+#include <iostream>  //cout
 #include <stdexcept> //exceptions
 
 #include "sydUtil.h"
@@ -30,7 +30,7 @@ Socket::Socket(int _port)
 
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
-    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
+    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
 }
 
 Socket::~Socket()
@@ -43,7 +43,7 @@ void Socket::bind_server()
 {
     debug("Binding server", __FILE__);
     server_address.sin_addr.s_addr = INADDR_ANY;
-    if (bind(id, (struct sockaddr *) &server_address, socklen))
+    if (bind(id, (struct sockaddr *)&server_address, socklen))
     {
         throw runtime_error("ERROR: Bind failed");
     }
@@ -63,7 +63,7 @@ void Socket::set_host(string hostname)
 string Socket::receive()
 {
     memset(receive_buffer, 0, sizeof(receive_buffer));
-    int n = recvfrom(id, receive_buffer, SOCKET_BUFFER_SIZE, 0, (struct sockaddr *) &sender_address, &socklen);
+    int n = recvfrom(id, receive_buffer, SOCKET_BUFFER_SIZE, 0, (struct sockaddr *)&sender_address, &socklen);
     if (n < 0)
     {
         if (errno == EWOULDBLOCK)
@@ -76,17 +76,16 @@ string Socket::receive()
     return string(receive_buffer);
 }
 
-
 void Socket::send(string bytes)
 {
-    struct sockaddr_in* target_address;
+    struct sockaddr_in *target_address;
     if (dest_address.sin_port)
     {
         target_address = &dest_address;
     }
     else if (host)
     {
-        debug("Target: "+string(host->h_name));
+        debug("Target: " + string(host->h_name));
         target_address = &server_address;
     }
     else
@@ -95,9 +94,9 @@ void Socket::send(string bytes)
         return;
     }
 
-    debug("Sending "+to_string(bytes.length())+" bytes...", __FILE__);
-    send_buffer = bytes.c_str();
-    int n = sendto(id, send_buffer, strlen(send_buffer), 0,(const struct sockaddr *) target_address, socklen);
+    debug("Sending " + to_string(bytes.length()) + " bytes...", __FILE__);
+    send_buffer = bytes.data();
+    int n = sendto(id, send_buffer, strlen(send_buffer), 0, (const struct sockaddr *)target_address, socklen);
     if (n < 0)
     {
         throw runtime_error("ERROR: Failed to send");
@@ -108,7 +107,7 @@ void Socket::send(string bytes)
 void Socket::set_timeout(int seconds)
 {
     timeout.tv_sec = seconds;
-    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
+    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
 }
 
 sockaddr_in Socket::get_sender_address()

@@ -1,7 +1,7 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
-#include <cstdio> 
+#include <cstdio>
 #include <fstream>
 
 #include "Socket.hpp"
@@ -13,12 +13,12 @@
 using namespace std;
 
 int main(int argc, char *argv[])
-{	
+{
     srand(time(NULL));
     string username = DEFAULT_USERNAME;
     string hostname = DEFAULT_HOSTNAME;
     int port = DEFAULT_PORT;
-    
+
     if (argc > 1)
     {
         username = string(argv[1]);
@@ -31,10 +31,8 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[3]);
     }
-    
-    Connection* connection = new Connection(username, hostname, port);
 
-    
+    Connection *connection = new Connection(username, hostname, port);
 
     // Main loop
     string command;
@@ -44,14 +42,11 @@ int main(int argc, char *argv[])
         getline(cin, command);
         if (command == "upload")
         {
-            File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/menes.txt");
-            int fileLength = file.GetLength();
-            char byteArray[fileLength];
-            file.FileToByteArray(byteArray);
-            
+            File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/jpg.jpg");
+
             connection->send(Message::T_UPLOAD, "menes.txt");
             connection->receive_ack();
-            connection->send_file(byteArray, fileLength);
+            connection->send_file(file);
         }
         else if (command == "download")
         {
