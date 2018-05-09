@@ -1,8 +1,23 @@
 #ifndef SYDUTIL_H
 #define SYDUTIL_H
 
+//C headers
+#include <netinet/in.h>
+#include <netdb.h> // hostent
+#include <pthread.h>
+#include <string.h> // bzero
+#include <sys/socket.h>
+#include <unistd.h> // close
+
+
+//C++ headers
+#include <iostream>
+#include <list>
+#include <map>
 #include <string>
 #include <stdexcept>
+#include <vector>
+
 
 using namespace std;
 

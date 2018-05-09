@@ -1,15 +1,5 @@
 #include "Socket.hpp"
 
-#include <string.h>     // bzero
-#include <netdb.h>      // hostent
-#include <unistd.h>     // close
-#include <sys/socket.h> //socket
-
-#include <iostream>  //cout
-#include <stdexcept> //exceptions
-
-#include "sydUtil.h"
-
 using namespace std;
 
 Socket::Socket(int _port)

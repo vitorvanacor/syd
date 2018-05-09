@@ -1,7 +1,5 @@
 #include "Message.hpp"
 
-#include "sydUtil.h"
-
 using namespace std;
 
 const string Message::MSG_SEPARATOR = "|";

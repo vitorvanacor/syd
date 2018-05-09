@@ -1,11 +1,5 @@
 #include "ServerThread.hpp"
 
-#include <iostream>
-
-#include "sydUtil.h"
-
-#include <iostream>
-
 ServerThread::ServerThread(string username, string session, Socket* new_socket)
 {
     is_open = true;

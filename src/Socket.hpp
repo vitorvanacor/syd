@@ -1,10 +1,6 @@
 #ifndef SOCKET_H
 #define SOCKET_H
-
-#include <netinet/in.h>
-#include <netdb.h>
-
-#include <string>
+#include "sydUtil.h"
 
 using namespace std;
 

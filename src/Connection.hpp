@@ -1,8 +1,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include <string>
-#include <map>
+#include "sydUtil.h"
 
 #include "Socket.hpp"
 #include "Message.hpp"
