@@ -1,72 +1,55 @@
-# Main compiler 
+# Compiler options 
 CC := g++ -std=c++11
-
-SRCDIR := src
-BUILDDIR := build
-CLIENTEXE := bin/sydClient.exe
-SERVEREXE := bin/sydServer.exe
- 
-CFLAGS := -g -Wall
+CFLAGS = -g -Wall -Wextra -Werror
 LIB := -pthread
 INC := -I include
 
+# Project dirs
+SRCDIR := src
+BUILDDIR := build
+
+# Project files
+## Executables
+CLIENTEXE := bin/sydClient.exe
+SERVEREXE := bin/sydServer.exe
+## Sources
+RAWCLIENTSRCS := sydClient.cpp
+CLIENTSRCS = $(addprefix $(SRCDIR)/, $(RAWCLIENTSRCS))
+RAWSERVERSRCS := sydServer.cpp ServerThread.cpp
+SERVERSRCS = $(addprefix $(SRCDIR)/, $(RAWSERVERSRCS))
+## Sources used by both
+RAWSRCS = sydUtil.cpp Connection.cpp File.cpp Message.cpp Socket.cpp Thread.cpp
+SRCS = $(addprefix $(SRCDIR)/, $(RAWSRCS))
+## Object files
+RAWCLIENTOBJS := $(RAWCLIENTSRCS:%.cpp=%.o)
+CLIENTOBJS := $(addprefix $(SRCDIR)/, $(RAWCLIENTSRCS))
+RAWSERVEROBJS := $(RAWSERVERSRCS:%.cpp=%.o)
+SERVEROBJS := $(addprefix $(SRCDIR)/, $(RAWSERVERSRCS))
+RAWOBJS := $(RAWSRCS:%.cpp=%.o)
+OBJS := $(addprefix $(BUILDDIR)/, $(RAWOBJS))
+
+# Rules
 all: $(CLIENTEXE) $(SERVEREXE)
 	@echo " ";
 	@echo " Done!"
 
-$(CLIENTEXE): $(BUILDDIR)/sydClient.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/Connection.o $(BUILDDIR)/File.o
+debug: CFLAGS += -DDEBUG
+debug: all
+	@echo " Debug mode"
+
+$(CLIENTEXE): $(OBJS) $(CLIENTOBJS)
 	@echo " ";
 	@echo " Link client:";
 	$(CC) $^ -o $(CLIENTEXE) $(LIB)
 
-$(SERVEREXE): $(BUILDDIR)/sydServer.o $(BUILDDIR)/Socket.o $(BUILDDIR)/Message.o $(BUILDDIR)/sydUtil.o $(BUILDDIR)/Thread.o $(BUILDDIR)/ServerThread.o $(BUILDDIR)/Connection.o $(BUILDDIR)/File.o
+$(SERVEREXE): $(OBJS) $(SERVEROBJS)
 	@echo " ";
 	@echo " Link server:";
 	$(CC) $^ -o $(SERVEREXE) $(LIB)
 
-$(BUILDDIR)/sydClient.o: $(SRCDIR)/sydClient.cpp
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp
 	@echo " ";
-	@echo " Compile client:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/sydServer.o: $(SRCDIR)/sydServer.cpp
-	@echo " ";
-	@echo " Compile server:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/sydUtil.o: $(SRCDIR)/sydUtil.cpp
-	@echo " ";
-	@echo " Compile util:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/Socket.o: $(SRCDIR)/Socket.cpp
-	@echo " ";
-	@echo " Compile Socket:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/Message.o: $(SRCDIR)/Message.cpp
-	@echo " ";
-	@echo " Compile Message:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/File.o: $(SRCDIR)/File.cpp
-	@echo " ";
-	@echo " Compile File:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/Thread.o: $(SRCDIR)/Thread.cpp
-	@echo " ";
-	@echo " Compile Thread:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/ServerThread.o: $(SRCDIR)/ServerThread.cpp
-	@echo " ";
-	@echo " Compile ServerThread:";
-	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
-
-$(BUILDDIR)/Connection.o: $(SRCDIR)/Connection.cpp
-	@echo " ";
-	@echo " Compile Connection:";
+	@echo " Compile $<";
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 # Tests
@@ -79,3 +62,4 @@ clean:
 	@echo " Cleaned!"
 
 rebuild: clean all
+redebug: clean debug

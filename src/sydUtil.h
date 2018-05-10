@@ -21,7 +21,6 @@
 
 using namespace std;
 
-#define DEBUG true
 #define TIMEOUT_IN_SECONDS 1
 
 #define DEFAULT_PORT 4000

@@ -1,17 +1,23 @@
-
 #include "sydUtil.h"
 
+// Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
+array<string, 1> hide_from_debug = {"Socket"};
 
 void debug(string msg, const char *file, int line)
 {
-    if (!DEBUG)
-    {
+    #ifndef DEBUG
         return;
-    }
+    #endif
+
     if (file)
     {
-        string filename = get_filename(string(file));
-        cout << without_extension(filename);
+        string filepath = without_extension(string(file));
+        string filename = get_filename(filepath);
+        for(string& it: hide_from_debug)
+        {
+            if (it == filename) return;
+        }
+        cout << filename;
     }
     cout << ": " << msg;
     if (line)
@@ -24,7 +30,7 @@ void debug(string msg, const char *file, int line)
 string get_filename(string filepath)
 {
     int last_slash_position = filepath.find_last_of('/');
-    return filepath.substr(last_slash_position);
+    return filepath.substr(last_slash_position+1);
 }
 
 string without_extension(string filename)
