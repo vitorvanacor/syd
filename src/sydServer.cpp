@@ -1,8 +1,6 @@
 #include "ServerThread.hpp"
 #include "sydUtil.h"
 
-using namespace std;
-
 void free_closed_threads(map<string,ServerThread*> threads)
 {
     auto it = threads.cbegin();

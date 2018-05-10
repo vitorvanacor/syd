@@ -1,7 +1,5 @@
 #include "Socket.hpp"
 
-using namespace std;
-
 Socket::Socket(int _port)
 {
     port = _port;

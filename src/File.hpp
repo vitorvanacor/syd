@@ -1,13 +1,11 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include <string>
-
-using namespace std;
+#include "sydUtil.h"
 
 class File
 {
-  public:
+public:
     File(string path);
     ~File();
 

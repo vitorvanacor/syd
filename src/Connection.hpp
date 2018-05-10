@@ -7,8 +7,6 @@
 #include "Message.hpp"
 #include "File.hpp"
 
-using namespace std;
-
 class Connection
 {
   public:

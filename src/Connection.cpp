@@ -1,7 +1,5 @@
 #include "Connection.hpp"
 
-using namespace std;
-
 /* Client connection */
 Connection::Connection(string username, string hostname, int port)
 {

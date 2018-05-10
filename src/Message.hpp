@@ -3,8 +3,6 @@
 
 #include "sydUtil.h"
 
-using namespace std;
-
 #define HEADER_SEPARATOR '|'
 
 class Message

@@ -9,8 +9,8 @@
 #include <sys/socket.h>
 #include <unistd.h> // close
 
-
 //C++ headers
+#include <fstream>
 #include <iostream>
 #include <list>
 #include <map>

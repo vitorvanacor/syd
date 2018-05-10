@@ -1,7 +1,5 @@
 #include "File.hpp"
 
-using namespace std;
-
 File::File(string path)
 {
     this->path = path;

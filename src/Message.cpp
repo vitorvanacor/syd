@@ -1,7 +1,5 @@
 #include "Message.hpp"
 
-using namespace std;
-
 const string Message::MSG_SEPARATOR = "|";
 
 const string Message::T_SYN = "SYN";

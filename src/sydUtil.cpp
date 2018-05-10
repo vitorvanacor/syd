@@ -1,9 +1,6 @@
-#include <string>
-#include <iostream>
 
 #include "sydUtil.h"
 
-using namespace std;
 
 void debug(string msg, const char *file, int line)
 {

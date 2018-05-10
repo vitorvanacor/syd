@@ -2,8 +2,6 @@
 #define SOCKET_H
 #include "sydUtil.h"
 
-using namespace std;
-
 #define SOCKET_BUFFER_SIZE 100
 #define PACKET_SIZE 10
 
