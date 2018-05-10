@@ -7,15 +7,17 @@ Socket::Socket(int _port)
     debug("Creating Socket " + to_string(id) + " at port " + to_string(port), __FILE__);
     if (id < 0)
     {
-        throw runtime_error("ERROR: Socket creation failed");
+        throw runtime_error(strerror(errno));
     }
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(port);
     bzero(&(server_address.sin_zero), 8);
-
-    socklen = sizeof(struct sockaddr_in);
     host = NULL;
 
+    // Used by sendto and rcvfrom
+    socklen = sizeof(struct sockaddr_in);
+
+    // Set timeout
     timeout.tv_sec = 0;
     timeout.tv_usec = 0;
     setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
@@ -33,7 +35,7 @@ void Socket::bind_server()
     server_address.sin_addr.s_addr = INADDR_ANY;
     if (bind(id, (struct sockaddr *)&server_address, socklen))
     {
-        throw runtime_error("ERROR: Bind failed");
+        throw runtime_error(strerror(errno));
     }
 }
 
@@ -43,7 +45,7 @@ void Socket::set_host(string hostname)
     host = gethostbyname(hostname.c_str());
     if (host == NULL)
     {
-        throw invalid_argument("ERROR: Invalid hostname");
+        throw invalid_argument(strerror(errno));
     }
     server_address.sin_addr = *((struct in_addr *)host->h_addr);
 }
@@ -58,7 +60,7 @@ string Socket::receive()
         {
             throw timeout_exception();
         }
-        throw runtime_error("ERROR: Failed to receive message");
+        throw runtime_error(strerror(errno));
     }
     debug("Bytes received: " + to_string(n), __FILE__);
     return string(receive_buffer);
@@ -87,7 +89,7 @@ void Socket::send(string bytes)
     int n = sendto(id, send_buffer, strlen(send_buffer), 0, (const struct sockaddr *)target_address, socklen);
     if (n < 0)
     {
-        throw runtime_error("ERROR: Failed to send");
+        perror("ERROR in socket send: ");
     }
     debug("Bytes sent: " + to_string(n), __FILE__);
 }

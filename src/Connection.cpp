@@ -190,6 +190,10 @@ Message Connection::receive()
         {
             resend();
         }
+        catch (runtime_error &e)
+        {
+            cout << e.what() << endl;
+        }
     }
 }
 
