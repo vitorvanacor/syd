@@ -21,8 +21,13 @@ void free_closed_threads(map<string,ServerThread*> threads)
 int main(int argc, char *argv[])
 {
     int port = DEFAULT_PORT;
+    if (argc > 1)
+    {
+        port = atoi(argv[1]);
+    }
+
     map<string,ServerThread*> threads;
-    Socket listener(DEFAULT_PORT);
+    Socket listener(port);
     listener.bind_server();
     cout << "Listening on port " << port << " for connections..." << endl;
     while (true)
