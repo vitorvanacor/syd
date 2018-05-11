@@ -1,9 +1,20 @@
-#include "sydUtil.h"
+#include "sydClient.h"
 
 #include "Socket.hpp"
 #include "Message.hpp"
 #include "File.hpp"
 #include "Connection.hpp"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <pwd.h>
+#include <grp.h>
+#include <time.h>
+#include <locale.h>
+#include <langinfo.h>
+#include <stdio.h>
+#include <stdint.h>
 
 int main(int argc, char *argv[])
 {
@@ -25,6 +36,7 @@ int main(int argc, char *argv[])
         port = atoi(argv[3]);
     }
 
+    File::create_directory(string(getenv("HOME"))+"/sync_dir_"+username);
     Connection *connection = new Connection(username, hostname, port);
 
     // Main loop
@@ -55,7 +67,7 @@ int main(int argc, char *argv[])
         }
         else if (command == "list_client")
         {
-            cout << "Dummy list client" << endl;
+            list_client(string(getenv("HOME"))+"/sync_dir_"+username);
         }
         else if (command == "exit")
         {
@@ -69,4 +81,30 @@ int main(int argc, char *argv[])
     delete connection;
     cout << "Successfully logged out!" << endl;
     return 0;
+}
+
+void list_client(string username)
+{
+    //char dir[255] = string(getenv("HOME"))+username
+    DIR* dir = opendir(username.c_str());
+    struct dirent  *dp;
+    struct stat     statbuf;
+    struct passwd  *pwd;
+    struct group   *grp;
+    struct tm      *tm;
+    char            datestring[256];
+
+    while ((dp = readdir(dir)) != NULL) {
+        /* Get entry's information. */
+        if (stat(dp->d_name, &statbuf) == -1)
+            continue;
+
+        /* Print size of file. */
+        printf("%u", (intmax_t)statbuf.st_size);
+
+        tm = localtime(&statbuf.st_mtime);
+        /* Get localized date string. */
+        strftime(datestring, sizeof(datestring), nl_langinfo(D_T_FMT), tm);
+        printf(" %s %s\n", datestring, dp->d_name);
+    }
 }

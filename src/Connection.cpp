@@ -202,7 +202,7 @@ void Connection::receive_file()
     debug("Waiting for data!");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
     FILE *file_ptr = fopen("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/banana.jpg", "wb+");
-    char buffer[PACKET_SIZE];
+    //char buffer[PACKET_SIZE];
     int length = 0;
 
     while (true)
@@ -221,7 +221,7 @@ void Connection::receive_file()
                 //strcpy(buffer, msg.content.data()); vitor tirou. memcpy seria melhor
                 length += msg.content.length();
 
-                for (int i = 0; i < sizeof(buffer); i++)
+                for (unsigned int i = 0; i < sizeof(buffer); i++)
                     printf(" %d ", buffer[i]);
 
                 //fwrite(buffer, sizeof(char), sizeof(buffer), file_ptr); vitor tirou

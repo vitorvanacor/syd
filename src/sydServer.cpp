@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[1]);
     }
+    system("pwd");
 
     map<string,ServerThread*> threads;
     Socket listener(port);

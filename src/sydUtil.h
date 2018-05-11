@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <string.h> // bzero
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h> // close
 
 //C++ headers
@@ -23,7 +24,7 @@ using namespace std;
 
 #define TIMEOUT_IN_SECONDS 1
 
-#define DEFAULT_PORT 4000
+#define DEFAULT_PORT 4001
 #define DEFAULT_HOSTNAME "localhost"
 #define DEFAULT_USERNAME "default_user"
 

@@ -9,6 +9,8 @@ public:
     File(string path);
     ~File();
 
+    static void create_directory(string path);
+
     string GetPath();
 
     string path;

@@ -14,6 +14,7 @@ ServerThread::~ServerThread()
 void* ServerThread::run()
 {
     connection->accept_connection();
+    File::create_directory(connection->username);
     cout << connection->username << " successfully logged in!" << endl;
     while (true)
     {
