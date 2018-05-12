@@ -9,11 +9,11 @@
 
 class Connection
 {
-  public:
-    Connection(string username, string host, int port);
-    Connection(string username, string session, Socket *new_socket);
+public:
+    Connection(string username, string session = "", Socket *new_socket = NULL);
     ~Connection();
 
+    void connect(string host, int port);
     void accept_connection();
 
     void send(string type, string content = "");

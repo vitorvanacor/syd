@@ -1,5 +1,7 @@
 #include "Socket.hpp"
 
+int Socket::DEFAULT_TIMEOUT = 1;
+
 Socket::Socket(int _port)
 {
     port = _port;
@@ -18,7 +20,7 @@ Socket::Socket(int _port)
     socklen = sizeof(struct sockaddr_in);
 
     // Set timeout
-    timeout.tv_sec = 0;
+    timeout.tv_sec = DEFAULT_TIMEOUT;
     timeout.tv_usec = 0;
     setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
 }
@@ -32,6 +34,7 @@ Socket::~Socket()
 void Socket::bind_server()
 {
     debug("Binding server", __FILE__);
+    set_timeout(0); // Never timeout
     server_address.sin_addr.s_addr = INADDR_ANY;
     if (bind(id, (struct sockaddr *)&server_address, socklen))
     {
@@ -108,4 +111,11 @@ sockaddr_in Socket::get_sender_address()
 void Socket::set_dest_address(sockaddr_in new_dest_address)
 {
     dest_address = new_dest_address;
+}
+
+Socket* Socket::get_answerer()
+{
+    Socket* answerer = new Socket(port);
+    answerer->dest_address = sender_address;
+    return answerer;
 }

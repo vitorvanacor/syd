@@ -35,9 +35,10 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[3]);
     }
-
-    Connection *connection = new Connection(username, hostname, port);
-
+    cout << "Connection to " << hostname << "..." << endl;
+    Connection *connection = new Connection(username);
+    connection->connect(hostname, port);
+    cout << "Successfully logged in as " << username << "!" << endl;
     // Main loop
     string command, filename;
     while (true)

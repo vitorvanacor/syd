@@ -37,11 +37,10 @@ int main(int argc, char *argv[])
         msg.print('<');
         if (msg.type == Message::T_SYN)
         {
-            if (!threads.count(msg.session))
+            if (!threads.count(msg.session)) // If session does not already exists
             {
-                Socket* new_socket = new Socket(port);
-                new_socket->set_dest_address(listener.get_sender_address());
-                ServerThread* new_thread = new ServerThread(msg.content, msg.session, new_socket);
+                Connection* connection = new Connection(msg.content, msg.session, listener.get_answerer());
+                ServerThread* new_thread = new ServerThread(connection);
                 new_thread->run();
                 threads[msg.session] = new_thread;
             }

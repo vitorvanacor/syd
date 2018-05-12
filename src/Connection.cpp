@@ -1,40 +1,30 @@
 #include "Connection.hpp"
 
-/* Client connection */
-Connection::Connection(string username, string hostname, int port)
+Connection::Connection(string username, string session, Socket *sock)
 {
-    this->session = to_string(rand() % 10000);
     this->username = username;
-    this->sock = new Socket(port);
-    debug("Creating session " + this->session, __FILE__);
-    init_sequences();
-
-    this->sock->set_host(hostname);
-    this->sock->set_timeout(TIMEOUT_IN_SECONDS);
-    send(Message::T_SYN, username);
-    receive_ack();
-    sock->set_dest_address(sock->get_sender_address());
-    send_ack();
-    user_directory = HOME+"/sync_dir_"+username;
-    File::create_directory(user_directory);
-    cout << "Successfully logged in as " << username << "!" << endl;
-}
-
-/* Server connection */
-Connection::Connection(string username, string session, Socket *new_socket)
-{
-    debug("New Connection: " + username + " (" + session + ")");
-    init_sequences();
     this->session = session;
-    this->username = username;
-    this->sock = new_socket;
-    this->sock->set_timeout(TIMEOUT_IN_SECONDS);
+    this->sock = sock;
+    init_sequences();
 }
 
 Connection::~Connection()
 {
     debug("Closing connection " + session);
     delete this->sock;
+}
+
+void Connection::connect(string hostname, int port)
+{
+    this->session = to_string(rand() % 10000);
+    this->sock = new Socket(port);
+    this->sock->set_host(hostname);
+    send(Message::T_SYN, username);
+    receive_ack();
+    sock->set_dest_address(sock->get_sender_address());
+    send_ack();
+    user_directory = HOME+"/sync_dir_"+username;
+    File::create_directory(user_directory);
 }
 
 void Connection::accept_connection()
@@ -87,7 +77,6 @@ void Connection::resend()
 void Connection::receive_ack()
 {
     debug("Waiting for ACK " + to_string(last_sequence_sent) + "...");
-    sock->set_timeout(TIMEOUT_IN_SECONDS);
     while (true)
     {
         Message msg = receive();
@@ -106,7 +95,6 @@ void Connection::receive_ack()
 Message Connection::receive(string expected_type)
 {
     debug("Waiting for " + expected_type + "...", __FILE__);
-    sock->set_timeout(TIMEOUT_IN_SECONDS);
     while (true)
     {
         // TODO: consider that error or bye can be received too
@@ -129,6 +117,7 @@ Message Connection::receive_request()
         if (msg.is_request())
         {
             last_sequence_received = msg.sequence;
+            this->sock->set_timeout(Socket::DEFAULT_TIMEOUT);
             return msg;
         }
     }
@@ -172,7 +161,6 @@ Message Connection::receive()
 void Connection::receive_file(string filename)
 {
     debug("Waiting for data!");
-    sock->set_timeout(TIMEOUT_IN_SECONDS);
     ofstream file(user_directory+"/"+filename, ofstream::binary | ofstream::trunc);
     while (true)
     {

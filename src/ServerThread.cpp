@@ -1,9 +1,9 @@
 #include "ServerThread.hpp"
 
-ServerThread::ServerThread(string username, string session, Socket* new_socket)
+ServerThread::ServerThread(Connection* connection)
 {
     is_open = true;
-    connection = new Connection(username, session, new_socket);
+    this->connection = connection;
 }
 
 ServerThread::~ServerThread()

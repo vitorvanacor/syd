@@ -21,6 +21,9 @@ class Socket
     void set_timeout(int seconds);
     sockaddr_in get_sender_address();
     void set_dest_address(sockaddr_in new_dest_address);
+    Socket* get_answerer();
+
+    static int DEFAULT_TIMEOUT;
 
   private:
     int id;
