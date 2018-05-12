@@ -28,15 +28,32 @@ void *ServerThread::run()
         {
             connection->send_ack();
             cout << connection->username << " is uploading " << request.content << "..." << endl;
-            connection->receive_file(connection->user_directory+"/"+request.content);
+            connection->receive_file(connection->user_directory + "/" + request.content);
             cout << connection->username << " successfully uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {
             connection->send_ack();
-            cout << connection->username << " is downloading " << request.content << "..." << endl;
-            connection->send_file(connection->user_directory+"/"+request.content);
-            cout << connection->username << " successfully downloaded " << request.content << endl;
+            try
+            {
+                if (!ifstream(connection->user_directory + '/' + request.content))
+                {
+                    cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
+                    connection->send(Message::T_ERROR);
+                    connection->receive_ack();
+                    continue;
+                }
+                connection->send(Message::T_SOF);
+                connection->receive_ack();
+                cout << connection->username << " is downloading " << request.content << "..." << endl;
+                connection->send_file(connection->user_directory + "/" + request.content);
+                cout << connection->username << " successfully downloaded " << request.content << endl;
+            }
+            catch (exception &e)
+            {
+                cout << e.what() << endl;
+                continue;
+            }
         }
         else if (request.type == Message::T_BYE)
         {

@@ -60,9 +60,13 @@ int main(int argc, char *argv[])
                 }
                 connection->send(Message::T_UPLOAD, filename);
                 connection->receive_ack();
+                connection->send(Message::T_SOF);
+                connection->receive_ack();
                 cout << "Uploading " << filename << "..." << endl;
-                connection->send_file(filename);
-                cout << filename << " uploaded successfully!" << endl;
+                if (connection->send_file(filename) == 0)
+                    cout << filename << " uploaded successfully!" << endl;
+                else
+                    cout << filename << " uploaded failed!" << endl;
             }
             catch (exception &e)
             {
@@ -72,12 +76,13 @@ int main(int argc, char *argv[])
         }
         else if (command == "download")
         {
-
             connection->send(Message::T_DOWNLOAD, filename);
             connection->receive_ack();
             cout << "Downloading " << filename << "..." << endl;
-            connection->receive_file(filename);
-            cout << filename << " downloaded successfully!" << endl;
+            if (connection->receive_file(filename) == 0)
+                cout << filename << " downloaded successfully!" << endl;
+            else
+                cout << filename << " downloaded failed!" << endl;
         }
         else if (command == "list_server" || command == "ls")
         {

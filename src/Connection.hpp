@@ -19,13 +19,13 @@ class Connection
     void send(string type, string content = "");
     void sendb(string stype, char *content = NULL);
     void send_ack();
-    void send_file(string filepath);
+    int send_file(string filepath);
     void resend();
 
     Message receive(string expected_type);
     Message receive_request();
     void receive_ack();
-    void receive_file(string filepath);
+    int receive_file(string filepath);
 
     static void *server_thread(void *void_this);
 

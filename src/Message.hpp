@@ -32,7 +32,9 @@ public:
     static const string T_UPLOAD;
     static const string T_BYE;
     static const string T_FILE;
+    static const string T_SOF;
     static const string T_EOF;
+    static const string T_ERROR;
 };
 
 #endif

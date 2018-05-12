@@ -1,5 +1,7 @@
 #include "Connection.hpp"
 
+#include <cstdio>
+
 /* Client connection */
 Connection::Connection(string username, string hostname, int port)
 {
@@ -61,7 +63,7 @@ void Connection::send_ack()
     send(Message::T_ACK, to_string(last_sequence_received));
 }
 
-void Connection::send_file(string filepath)
+int Connection::send_file(string filepath)
 {
     ifstream file(filepath, std::ifstream::binary);
     char buffer[PACKET_SIZE];
@@ -73,6 +75,7 @@ void Connection::send_file(string filepath)
     } while (!file.eof());
     send(Message::T_EOF);
     receive_ack();
+    return 0;
 }
 
 void Connection::resend()
@@ -102,7 +105,6 @@ void Connection::receive_ack()
         }
     }
 }
-
 Message Connection::receive(string expected_type)
 {
     debug("Waiting for " + expected_type + "...", __FILE__);
@@ -169,29 +171,42 @@ Message Connection::receive()
     }
 }
 
-void Connection::receive_file(string filepath)
+int Connection::receive_file(string filepath)
 {
     debug("Waiting for data!");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
 
-    ofstream file(filepath, ofstream::binary | ofstream::trunc);
+    ofstream file;
 
     while (true)
     {
         Message msg = receive();
         {
             // TODO: consider that error or bye can be received too
-            if (msg.type == Message::T_FILE)
+            if (msg.type == Message::T_SOF)
+            {
+                last_sequence_received = msg.sequence;
+                file.open(filepath, ofstream::binary | ofstream::trunc);
+                send_ack();
+            }
+            else if (msg.type == Message::T_FILE)
             {
                 last_sequence_received = msg.sequence;
                 file.write(msg.content.data(), msg.content.length());
                 send_ack();
             }
+            else if (msg.type == Message::T_ERROR)
+            {
+                last_sequence_received = msg.sequence;
+                send_ack();
+                file.close();
+                return -1;
+            }
             else if (msg.type == Message::T_EOF)
             {
                 last_sequence_received = msg.sequence;
                 send_ack();
-                return;
+                return 0;
             }
         }
     }
