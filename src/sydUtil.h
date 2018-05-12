@@ -28,9 +28,12 @@ using namespace std;
 #define DEFAULT_HOSTNAME "localhost"
 #define DEFAULT_USERNAME "default_user"
 
+static const string HOME = string(getenv("HOME"));
+
 void debug(string msg, const char *file = NULL, int line = 0);
 string get_filename(string filepath);
 string without_extension(string filename);
+string working_directory();
 
 class timeout_exception : public runtime_error
 {

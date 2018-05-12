@@ -36,22 +36,39 @@ int main(int argc, char *argv[])
         port = atoi(argv[3]);
     }
 
-    File::create_directory(string(getenv("HOME"))+"/sync_dir_"+username);
     Connection *connection = new Connection(username, hostname, port);
 
     // Main loop
-    string command;
+    string command, filename;
     while (true)
     {
         cout << "Enter command: ";
-        getline(cin, command);
+        //getline(cin, command);
+        cin >> command;
+        if (command == "upload" || command == "download")
+        {
+            cin >> filename;
+        }
         if (command == "upload")
         {
-            File file = File("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/jpg.jpg");
-
-            connection->send(Message::T_UPLOAD, "menes.txt");
-            connection->receive_ack();
-            connection->send_file(file);
+            try
+            {
+                if (!ifstream(filename))
+                {
+                    cout << "Error opening file " << filename << " at " << working_directory() << endl;
+                    continue;
+                }
+                connection->send(Message::T_UPLOAD, filename);
+                connection->receive_ack();
+                cout << "Uploading " << filename << "..." << endl;
+                connection->send_file(filename);
+                cout << filename << " uploaded successfully!" << endl;
+            }
+            catch (exception& e)
+            {
+                cout << e.what() << endl;
+                continue;
+            }
         }
         else if (command == "download")
         {
@@ -65,7 +82,7 @@ int main(int argc, char *argv[])
             cout << server_list << endl;
             connection->send_ack();
         }
-        else if (command == "list_client")
+        else if (command == "list_client" || command == "lc")
         {
             list_client(string(getenv("HOME"))+"/sync_dir_"+username);
         }
@@ -77,6 +94,10 @@ int main(int argc, char *argv[])
             connection->send_ack();
             break;
         }
+        else
+        {
+            cout << "Invalid command" << endl;
+        }
     }
     delete connection;
     cout << "Successfully logged out!" << endl;
@@ -85,7 +106,6 @@ int main(int argc, char *argv[])
 
 void list_client(string username)
 {
-    //char dir[255] = string(getenv("HOME"))+username
     DIR* dir = opendir(username.c_str());
     struct dirent  *dp;
     struct stat     statbuf;
@@ -100,7 +120,7 @@ void list_client(string username)
             continue;
 
         /* Print size of file. */
-        printf("%u", (intmax_t)statbuf.st_size);
+        //printf("%u", (intmax_t)statbuf.st_size);
 
         tm = localtime(&statbuf.st_mtime);
         /* Get localized date string. */

@@ -2,8 +2,8 @@
 #define SOCKET_H
 #include "sydUtil.h"
 
-#define SOCKET_BUFFER_SIZE 100
-#define PACKET_SIZE 10
+#define SOCKET_BUFFER_SIZE 300
+#define PACKET_SIZE 200
 
 class Socket
 {

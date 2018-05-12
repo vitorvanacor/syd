@@ -14,7 +14,7 @@ ServerThread::~ServerThread()
 void* ServerThread::run()
 {
     connection->accept_connection();
-    File::create_directory(connection->username);
+    
     cout << connection->username << " successfully logged in!" << endl;
     while (true)
     {
@@ -27,7 +27,9 @@ void* ServerThread::run()
         else if (request.type == Message::T_UPLOAD)
         {
             connection->send_ack();
-            connection->receive_file();
+            cout << connection->username << " is uploading " << request.content << "..." << endl;
+            connection->receive_file(request.content);
+            cout << connection->username << " successfully uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {

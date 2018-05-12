@@ -15,6 +15,8 @@ Connection::Connection(string username, string hostname, int port)
     receive_ack();
     sock->set_dest_address(sock->get_sender_address());
     send_ack();
+    user_directory = HOME+"/sync_dir_"+username;
+    File::create_directory(user_directory);
     cout << "Successfully logged in as " << username << "!" << endl;
 }
 
@@ -40,6 +42,8 @@ void Connection::accept_connection()
     last_sequence_received = 0;
     send_ack();
     receive_ack();
+    user_directory = username;
+    File::create_directory(user_directory);
     debug("Connection " + session + " established");
 }
 
@@ -57,48 +61,16 @@ void Connection::send_ack()
     send(Message::T_ACK, to_string(last_sequence_received));
 }
 
-void Connection::send_file(File file)
+void Connection::send_file(string filepath)
 {
+    ifstream file(filepath, std::ifstream::binary);;
     char buffer[PACKET_SIZE];
-    FILE *file_ptr;
-    int total_send = 0;
-
-    string file_path = file.GetPath();
-    file_ptr = fopen(file_path.c_str(), "rb+");
-
-    // File length
-    ifstream in(file_path, ifstream::ate | ifstream::binary);
-    int file_length = in.tellg();
-
-    int remaining_bytes = file_length;
-    
-    int file_index = 0;
-    while (remaining_bytes >= PACKET_SIZE)
+    do
     {
-        total_send += sizeof(buffer);
-
-        fread(buffer, sizeof(char), PACKET_SIZE, file_ptr);
-        send(Message::T_FILE, buffer);
+        file.read(buffer, PACKET_SIZE);
+        send(Message::T_FILE, string(buffer, file.gcount()));
         receive_ack();
-        file_index += PACKET_SIZE;
-        remaining_bytes -= PACKET_SIZE;
-    }
-    if (remaining_bytes > 0)
-    {
-        char remainder_buffer[remaining_bytes];
-        fread(remainder_buffer, sizeof(char), remaining_bytes, file_ptr);
-
-        total_send += sizeof(remainder_buffer);
-
-        send(Message::T_FILE, remainder_buffer);
-        receive_ack();
-    }
-
-    cout << "total_send: " << total_send << endl;
-
-    fclose(file_ptr);
-
-    // Send end of file
+    } while (!file.eof());
     send(Message::T_EOF);
     receive_ack();
 }
@@ -197,43 +169,25 @@ Message Connection::receive()
     }
 }
 
-void Connection::receive_file()
+void Connection::receive_file(string filename)
 {
     debug("Waiting for data!");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
-    FILE *file_ptr = fopen("/home/pietra/Documentos/UFRGS/CIC/SISOP2/syd/banana.jpg", "wb+");
-    //char buffer[PACKET_SIZE];
-    int length = 0;
-
+    ofstream file(user_directory+"/"+filename, ofstream::binary | ofstream::trunc);
     while (true)
     {
-        debug("Waiting for data!");
+        
         Message msg = receive();
         {
             // TODO: consider that error or bye can be received too
-            if (msg.type == Message::T_FILE)
-            {
+            if (msg.type == Message::T_FILE) {
                 last_sequence_received = msg.sequence;
-                //cout << "Content: " << msg.content << endl;
-
-                char *buffer = new char[msg.content.length() + 1]; //LEAK!!
-
-                //strcpy(buffer, msg.content.data()); vitor tirou. memcpy seria melhor
-                length += msg.content.length();
-
-                for (unsigned int i = 0; i < sizeof(buffer); i++)
-                    printf(" %d ", buffer[i]);
-
-                //fwrite(buffer, sizeof(char), sizeof(buffer), file_ptr); vitor tirou
-                fwrite(msg.content.data(), sizeof(char), sizeof(msg.content.data()), file_ptr);
+                file.write(msg.content.data(), msg.content.length());
                 send_ack();
             }
             else if (msg.type == Message::T_EOF)
             {
                 last_sequence_received = msg.sequence;
-                cout << "End of File!" << endl;
-                cout << "received: " << length << endl;
-                fclose(file_ptr);
                 send_ack();
                 return;
             }

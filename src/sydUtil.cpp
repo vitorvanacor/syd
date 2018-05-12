@@ -1,7 +1,7 @@
 #include "sydUtil.h"
 
 // Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
-array<string, 1> hide_from_debug = {"Socket"};
+array<string, 1> hide_from_debug = {""};
 
 void debug(string msg, const char *file, int line)
 {
@@ -37,4 +37,9 @@ string without_extension(string filename)
 {
     int dot_position = filename.find_last_of('.');
     return filename.substr(0, dot_position);
+}
+
+string working_directory()
+{
+    return string(getenv("PWD"));
 }

@@ -63,7 +63,7 @@ string Socket::receive()
         throw runtime_error(strerror(errno));
     }
     debug("Bytes received: " + to_string(n), __FILE__);
-    return string(receive_buffer);
+    return string(receive_buffer, n);
 }
 
 void Socket::send(string bytes)
@@ -86,7 +86,7 @@ void Socket::send(string bytes)
 
     debug("Sending " + to_string(bytes.length()) + " bytes...", __FILE__);
     send_buffer = bytes.data();
-    int n = sendto(id, send_buffer, strlen(send_buffer), 0, (const struct sockaddr *)target_address, socklen);
+    int n = sendto(id, send_buffer, bytes.length(), 0, (const struct sockaddr *)target_address, socklen);
     if (n < 0)
     {
         perror("ERROR in socket send: ");
