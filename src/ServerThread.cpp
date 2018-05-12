@@ -28,14 +28,14 @@ void *ServerThread::run()
         {
             connection->send_ack();
             cout << connection->username << " is uploading " << request.content << "..." << endl;
-            connection->receive_file(request.content, FROM_CLIENT);
+            connection->receive_file(connection->user_directory+"/"+request.content);
             cout << connection->username << " successfully uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {
             connection->send_ack();
             cout << connection->username << " is downloading " << request.content << "..." << endl;
-            connection->send_file(request.content, TO_CLIENT);
+            connection->send_file(connection->user_directory+"/"+request.content);
             cout << connection->username << " successfully downloaded " << request.content << endl;
         }
         else if (request.type == Message::T_BYE)

@@ -61,17 +61,8 @@ void Connection::send_ack()
     send(Message::T_ACK, to_string(last_sequence_received));
 }
 
-void Connection::send_file(string filename, int to_whom)
+void Connection::send_file(string filepath)
 {
-    string filepath;
-
-    if (to_whom == TO_CLIENT)
-        filepath = user_directory + "/" + filename;
-    else if (to_whom == TO_SERVER)
-        filepath = filename;
-
-    cout << "filepath: " << filepath << endl;
-
     ifstream file(filepath, std::ifstream::binary);
     char buffer[PACKET_SIZE];
     do
@@ -178,18 +169,10 @@ Message Connection::receive()
     }
 }
 
-void Connection::receive_file(string filename, int from_whom)
+void Connection::receive_file(string filepath)
 {
     debug("Waiting for data!");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
-    string filepath;
-
-    if (from_whom == FROM_CLIENT)
-        filepath = user_directory + "/" + filename;
-    else if (from_whom == FROM_SERVER)
-        filepath = filename;
-
-    cout << "filepath: " << filepath << endl;
 
     ofstream file(filepath, ofstream::binary | ofstream::trunc);
 

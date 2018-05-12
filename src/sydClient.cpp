@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
                 connection->send(Message::T_UPLOAD, filename);
                 connection->receive_ack();
                 cout << "Uploading " << filename << "..." << endl;
-                connection->send_file(filename, TO_SERVER);
+                connection->send_file(filename);
                 cout << filename << " uploaded successfully!" << endl;
             }
             catch (exception &e)
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
             connection->send(Message::T_DOWNLOAD, filename);
             connection->receive_ack();
             cout << "Downloading " << filename << "..." << endl;
-            connection->receive_file(filename, FROM_SERVER);
+            connection->receive_file(filename);
             cout << filename << " downloaded successfully!" << endl;
         }
         else if (command == "list_server" || command == "ls")
