@@ -1,6 +1,6 @@
 #include "ServerThread.hpp"
 
-ServerThread::ServerThread(string username, string session, Socket* new_socket)
+ServerThread::ServerThread(string username, string session, Socket *new_socket)
 {
     is_open = true;
     connection = new Connection(username, session, new_socket);
@@ -11,10 +11,10 @@ ServerThread::~ServerThread()
     delete connection;
 }
 
-void* ServerThread::run()
+void *ServerThread::run()
 {
     connection->accept_connection();
-    
+
     cout << connection->username << " successfully logged in!" << endl;
     while (true)
     {
@@ -28,12 +28,15 @@ void* ServerThread::run()
         {
             connection->send_ack();
             cout << connection->username << " is uploading " << request.content << "..." << endl;
-            connection->receive_file(request.content);
+            connection->receive_file(request.content, FROM_CLIENT);
             cout << connection->username << " successfully uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {
-            //connection->send_file(request.content);
+            connection->send_ack();
+            cout << connection->username << " is downloading " << request.content << "..." << endl;
+            connection->send_file(request.content, TO_CLIENT);
+            cout << connection->username << " successfully downloaded " << request.content << endl;
         }
         else if (request.type == Message::T_BYE)
         {

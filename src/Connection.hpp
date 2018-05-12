@@ -7,6 +7,12 @@
 #include "Message.hpp"
 #include "File.hpp"
 
+#define FROM_CLIENT 0
+#define FROM_SERVER 1
+
+#define TO_CLIENT 0
+#define TO_SERVER 1
+
 class Connection
 {
   public:
@@ -19,13 +25,13 @@ class Connection
     void send(string type, string content = "");
     void sendb(string stype, char *content = NULL);
     void send_ack();
-    void send_file(string filepath);
+    void send_file(string filename, int to_whom);
     void resend();
 
     Message receive(string expected_type);
     Message receive_request();
     void receive_ack();
-    void receive_file(string filename);
+    void receive_file(string filename, int from_who);
 
     static void *server_thread(void *void_this);
 

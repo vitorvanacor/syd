@@ -15,7 +15,7 @@ Connection::Connection(string username, string hostname, int port)
     receive_ack();
     sock->set_dest_address(sock->get_sender_address());
     send_ack();
-    user_directory = HOME+"/sync_dir_"+username;
+    user_directory = HOME + "/sync_dir_" + username;
     File::create_directory(user_directory);
     cout << "Successfully logged in as " << username << "!" << endl;
 }
@@ -61,9 +61,18 @@ void Connection::send_ack()
     send(Message::T_ACK, to_string(last_sequence_received));
 }
 
-void Connection::send_file(string filepath)
+void Connection::send_file(string filename, int to_whom)
 {
-    ifstream file(filepath, std::ifstream::binary);;
+    string filepath;
+
+    if (to_whom == TO_CLIENT)
+        filepath = user_directory + "/" + filename;
+    else if (to_whom == TO_SERVER)
+        filepath = filename;
+
+    cout << "filepath: " << filepath << endl;
+
+    ifstream file(filepath, std::ifstream::binary);
     char buffer[PACKET_SIZE];
     do
     {
@@ -169,18 +178,28 @@ Message Connection::receive()
     }
 }
 
-void Connection::receive_file(string filename)
+void Connection::receive_file(string filename, int from_whom)
 {
     debug("Waiting for data!");
     sock->set_timeout(TIMEOUT_IN_SECONDS);
-    ofstream file(user_directory+"/"+filename, ofstream::binary | ofstream::trunc);
+    string filepath;
+
+    if (from_whom == FROM_CLIENT)
+        filepath = user_directory + "/" + filename;
+    else if (from_whom == FROM_SERVER)
+        filepath = filename;
+
+    cout << "filepath: " << filepath << endl;
+
+    ofstream file(filepath, ofstream::binary | ofstream::trunc);
+
     while (true)
     {
-        
         Message msg = receive();
         {
             // TODO: consider that error or bye can be received too
-            if (msg.type == Message::T_FILE) {
+            if (msg.type == Message::T_FILE)
+            {
                 last_sequence_received = msg.sequence;
                 file.write(msg.content.data(), msg.content.length());
                 send_ack();
