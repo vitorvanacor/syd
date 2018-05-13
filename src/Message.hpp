@@ -7,7 +7,7 @@
 
 class Message
 {
-public:
+  public:
     Message(string session, int sequence, string type, string content);
 
     string to_string();
@@ -15,7 +15,7 @@ public:
     bool is_request();
 
     static Message parse(string msg);
-    static Message parseb(char* msg);
+    static Message parseb(char *msg);
 
     string type;
     string session;
@@ -35,6 +35,9 @@ public:
     static const string T_SOF;
     static const string T_EOF;
     static const string T_ERROR;
+    static const string T_SYNC;
+    static const string T_STAT;
+    static const string T_DONE;
 };
 
 #endif

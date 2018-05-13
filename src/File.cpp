@@ -19,11 +19,11 @@ void File::create_directory(string path)
 unsigned int get_filesize(string filename)
 {
     struct stat info;
-    if(stat(filename.c_str(), &info) != 0)
+    if (stat(filename.c_str(), &info) != 0)
     {
         return 0;
     }
-    return info.st_size;   
+    return info.st_size;
 }
 
 // Getters

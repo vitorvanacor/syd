@@ -7,17 +7,17 @@
 #include "Socket.hpp"
 #include "Connection.hpp"
 
-class ServerThread: public Thread
+class ServerThread : public Thread
 {
-public:
-    ServerThread(Connection* connection);
+  public:
+    ServerThread(Connection *connection);
     ~ServerThread();
-    void* run();
+    void *run();
 
     bool is_open;
 
-private:
-    Connection* connection;
+  private:
+    Connection *connection;
 };
 
 #endif

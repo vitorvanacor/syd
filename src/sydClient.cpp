@@ -43,6 +43,7 @@ int main(int argc, char *argv[])
     connection->connect();
     ClientSync client_sync(connection);
     cout << "Successfully logged in as " << username << "!" << endl;
+
     // Main loop
     string command, filename;
     while (true)

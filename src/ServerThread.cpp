@@ -2,7 +2,7 @@
 
 #include "ServerSync.hpp"
 
-ServerThread::ServerThread(Connection* connection)
+ServerThread::ServerThread(Connection *connection)
 {
     is_open = true;
     this->connection = connection;

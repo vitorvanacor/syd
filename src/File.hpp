@@ -5,11 +5,12 @@
 
 class File
 {
-public:
+  public:
     File(string path);
     ~File();
 
     static void create_directory(string path);
+    unsigned int get_filesize(string filename);
 
     string GetPath();
 
