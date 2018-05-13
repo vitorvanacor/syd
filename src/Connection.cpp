@@ -182,7 +182,7 @@ int Connection::receive_file(string filepath)
     {
         Message msg = receive();
         {
-            // TODO: consider that error or bye can be received too
+            // TODO: consider that bye can be received too
             if (msg.type == Message::T_SOF)
             {
                 last_sequence_received = msg.sequence;

@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
                 Socket* new_socket = new Socket(port);
                 new_socket->set_dest_address(listener.get_sender_address());
                 ServerThread* new_thread = new ServerThread(msg.content, msg.session, new_socket);
-                new_thread->run();
+                new_thread->start();
                 threads[msg.session] = new_thread;
             }
             else
