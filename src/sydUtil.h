@@ -18,6 +18,7 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
+#include <list>
 
 using namespace std;
 

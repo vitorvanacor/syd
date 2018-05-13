@@ -76,6 +76,9 @@ int main(int argc, char *argv[])
             }
             catch (exception &e)
             {
+                connection->send(Message::T_ERROR);
+                connection->receive_ack();
+
                 cout << e.what() << endl;
                 continue;
             }

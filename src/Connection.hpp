@@ -22,7 +22,8 @@ public:
   int send_file(string filepath);
   void resend();
 
-  Message receive(string expected_type, string other_type = " ");
+  Message receive(string expected_type);
+  Message receive(list<string> expected_types);
   Message receive_request();
   void receive_ack();
   int receive_file(string filepath);

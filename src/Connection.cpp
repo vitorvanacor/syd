@@ -93,7 +93,7 @@ void Connection::receive_ack()
     }
 }
 
-Message Connection::receive(string expected_type, string other_type)
+Message Connection::receive(string expected_type)
 {
     debug("Waiting for " + expected_type + "...", __FILE__);
     while (true)
@@ -105,10 +105,22 @@ Message Connection::receive(string expected_type, string other_type)
             last_sequence_received = msg.sequence;
             return msg;
         }
-        else if (msg.type == other_type)
+    }
+}
+
+Message Connection::receive(list<string> expected_types)
+{
+    while (true)
+    {
+        // TODO: consider that error or bye can be received too
+        Message msg = receive();
+        for (list<string>::iterator it = expected_types.begin(); it != expected_types.end(); ++it)
         {
-            last_sequence_received = msg.sequence;
-            return msg;
+            if (msg.type == *it)
+            {
+                last_sequence_received = msg.sequence;
+                return msg;
+            }
         }
     }
 }

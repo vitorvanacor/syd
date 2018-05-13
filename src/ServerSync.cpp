@@ -1,7 +1,5 @@
 #include "ServerSync.hpp"
 
-#include <string>
-
 ServerSync::ServerSync(Connection *connection)
 {
     string new_session;
@@ -36,10 +34,16 @@ void *ServerSync::run()
 
         while (receiving_stats)
         {
-            Message msg = connection->receive(Message::T_STAT, Message::T_DONE);
-            // Check file time stamp
+            list<string> expected_types;
+            expected_types.push_back(Message::T_STAT);
+            expected_types.push_back(Message::T_DONE);
+            Message msg = connection->receive(expected_types);
+
+            // Check file timestamp
             if (msg.type == Message::T_STAT)
             {
+                connection->send_ack();
+
                 // Parses content:
                 // Find position of separators
                 int timestamp_sep = msg.content.find('|');
@@ -53,21 +57,52 @@ void *ServerSync::run()
                 int timestamp_remote = stoi(msg.content.substr(0, timestamp_len));
                 string filename = msg.content.substr(timestamp_len + 1, content_len);
 
-                cout << "TIMESTAMP_CLIENT" << timestamp_remote << endl;
-
                 // Gets timestamp from the file stored at server
                 int timestamp_local = get_filetimestamp(connection->user_directory + "/" + "menes.txt");
-                cout << "TIMESTAMP_SERVER: " << timestamp_local << endl;
 
                 // Compares timestamp
-                // Client needs to download
                 if (timestamp_remote < timestamp_local)
-                    cout << "Client needs to download" << endl;
-                // Client need to upload
-                else if (timestamp_remote > timestamp_local)
-                    cout << "Client needs to upload" << endl;
+                {
+                    debug("Client needs to download");
+
+                    try
+                    {
+                        if (!ifstream(connection->user_directory + '/' + filename))
+                        {
+                            cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
+                            connection->send(Message::T_ERROR);
+                            connection->receive_ack();
+                        }
+                        connection->send(Message::T_SOF);
+                        connection->receive_ack();
+
+                        connection->send_file(connection->user_directory + "/" + filename);
+                    }
+                    catch (exception &e)
+                    {
+                        cout << e.what() << endl;
+                        continue;
+                    }
+                }
+                else if (timestamp_remote > timestamp_local || timestamp_local == -1)
+                {
+
+                    debug("Client needs to upload");
+
+                    connection->send(Message::T_UPLOAD);
+                    connection->receive_ack();
+
+                    debug("Uploading " + filename + " ...");
+                    connection->receive_file(connection->user_directory + "/" + filename);
+                    debug(filename + " uploaded.");
+                }
                 else
-                    cout << "Same file." << endl;
+                {
+                    debug("Same file.");
+
+                    connection->send(Message::T_EQUAL);
+                    connection->receive_ack();
+                }
             }
             // Sync finished
             else if (msg.type == Message::T_DONE)
