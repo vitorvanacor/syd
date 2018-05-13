@@ -24,7 +24,7 @@ void *ServerThread::run()
         Message request = connection->receive_request();
         if (request.type == Message::T_LS)
         {
-            connection->send(Message::T_LS, "file1.txt;2018-01-01 13:00:00|file2.txt;2018-02-01 15:00:00");
+            connection->send(Message::T_LS, connection->list_server_dir(connection->user_directory));
             connection->receive_ack();
         }
         else if (request.type == Message::T_UPLOAD)

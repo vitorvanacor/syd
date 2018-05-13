@@ -10,6 +10,7 @@ public:
     ~File();
 
     static void create_directory(string path);
+    static string list_directory(string dirpath);
 
     string GetPath();
 

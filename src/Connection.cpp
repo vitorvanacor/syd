@@ -203,3 +203,8 @@ void Connection::init_sequences()
     last_sequence_sent = -1;
     last_sequence_received = -1;
 }
+
+string Connection::list_server_dir(string dirpath)
+{
+    return File::list_directory(dirpath);
+}
