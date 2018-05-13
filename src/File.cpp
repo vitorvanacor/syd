@@ -38,22 +38,34 @@ string File::list_directory(string dirpath)
     struct stat fileInfo;
     string files = "";
     struct tm *tm;
-    char datestring[256] = {0};
+    char mod_time[256] = {0};
+    char create_time[256] = {0};
+    char last_time[256] = {0};
 
     dp = opendir (dirpath.c_str());
     if (dp != NULL)
     {
+        files += "Name|Created At|Modified At|Last Accessed At|\n";
         while ((ep = readdir(dp)))
         {
             if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
             {
                 stat(ep->d_name, &fileInfo);
                 tm = localtime(&fileInfo.st_mtime);
-                strftime(datestring, sizeof(datestring), nl_langinfo(D_T_FMT), tm);
+                strftime(mod_time, sizeof(mod_time), nl_langinfo(D_T_FMT), tm);
+                tm = localtime(&fileInfo.st_ctime);
+                strftime(create_time, sizeof(create_time), nl_langinfo(D_T_FMT), tm);
+                tm = localtime(&fileInfo.st_atime);
+                strftime(last_time, sizeof(last_time), nl_langinfo(D_T_FMT), tm);
+
                 files += ep->d_name;
-                files += ";";
-                files += datestring;
-                files += "|";
+                files += "| ";
+                files += create_time;
+                files += "| ";
+                files += mod_time;
+                files += "| ";
+                files += last_time;
+                files += "|\n";
             }
         }
         (void) closedir (dp);
