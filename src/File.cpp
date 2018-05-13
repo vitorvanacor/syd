@@ -50,7 +50,8 @@ string File::list_directory(string dirpath)
         {
             if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
             {
-                stat(ep->d_name, &fileInfo);
+                if (stat(ep->d_name, &fileInfo) == -1)
+                    continue;
                 tm = localtime(&fileInfo.st_mtime);
                 strftime(mod_time, sizeof(mod_time), nl_langinfo(D_T_FMT), tm);
                 tm = localtime(&fileInfo.st_ctime);
