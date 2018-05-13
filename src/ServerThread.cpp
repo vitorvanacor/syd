@@ -13,7 +13,7 @@ ServerThread::~ServerThread()
     delete connection;
 }
 
-void* ServerThread::run()
+void *ServerThread::run()
 {
     connection->accept_connection();
     ServerSync server_sync(connection);
@@ -31,12 +31,32 @@ void* ServerThread::run()
         {
             connection->send_ack();
             cout << connection->username << " is uploading " << request.content << "..." << endl;
-            connection->receive_file(request.content);
+            connection->receive_file(connection->user_directory + "/" + request.content);
             cout << connection->username << " uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {
-            //connection->send_file(request.content);
+            connection->send_ack();
+            try
+            {
+                if (!ifstream(connection->user_directory + '/' + request.content))
+                {
+                    cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
+                    connection->send(Message::T_ERROR);
+                    connection->receive_ack();
+                    continue;
+                }
+                connection->send(Message::T_SOF);
+                connection->receive_ack();
+                cout << connection->username << " is downloading " << request.content << "..." << endl;
+                connection->send_file(connection->user_directory + "/" + request.content);
+                cout << connection->username << " downloaded " << request.content << endl;
+            }
+            catch (exception &e)
+            {
+                cout << e.what() << endl;
+                continue;
+            }
         }
         else if (request.type == Message::T_BYE)
         {

@@ -65,11 +65,15 @@ int main(int argc, char *argv[])
                 }
                 connection->send(Message::T_UPLOAD, filename);
                 connection->receive_ack();
+                connection->send(Message::T_SOF);
+                connection->receive_ack();
                 cout << "Uploading " << filename << "..." << endl;
-                connection->send_file(filename);
-                cout << filename << " uploaded successfully!" << endl;
+                if (connection->send_file(filename) == 0)
+                    cout << filename << " uploaded successfully!" << endl;
+                else
+                    cout << filename << " uploaded failed!" << endl;
             }
-            catch (exception& e)
+            catch (exception &e)
             {
                 cout << e.what() << endl;
                 continue;
@@ -77,8 +81,13 @@ int main(int argc, char *argv[])
         }
         else if (command == "download")
         {
-            connection->send(Message::T_DOWNLOAD, "file_d.txt");
-            //connection->receive_file();
+            connection->send(Message::T_DOWNLOAD, filename);
+            connection->receive_ack();
+            cout << "Downloading " << filename << "..." << endl;
+            if (connection->receive_file(filename) == 0)
+                cout << filename << " downloaded successfully!" << endl;
+            else
+                cout << filename << " downloaded failed!" << endl;
         }
         else if (command == "list_server" || command == "ls")
         {
@@ -89,7 +98,7 @@ int main(int argc, char *argv[])
         }
         else if (command == "list_client" || command == "lc")
         {
-            list_client(string(getenv("HOME"))+"/sync_dir_"+username);
+            list_client(string(getenv("HOME")) + "/sync_dir_" + username);
         }
         else if (command == "exit")
         {
@@ -111,15 +120,16 @@ int main(int argc, char *argv[])
 
 void list_client(string username)
 {
-    DIR* dir = opendir(username.c_str());
-    struct dirent  *dp;
-    struct stat     statbuf;
-    struct passwd  *pwd;
-    struct group   *grp;
-    struct tm      *tm;
-    char            datestring[256];
+    DIR *dir = opendir(username.c_str());
+    struct dirent *dp;
+    struct stat statbuf;
+    struct passwd *pwd;
+    struct group *grp;
+    struct tm *tm;
+    char datestring[256];
 
-    while ((dp = readdir(dir)) != NULL) {
+    while ((dp = readdir(dir)) != NULL)
+    {
         /* Get entry's information. */
         if (stat(dp->d_name, &statbuf) == -1)
             continue;
