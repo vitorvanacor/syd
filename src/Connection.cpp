@@ -4,6 +4,10 @@ Connection::Connection(string username, string session, Socket *sock)
 {
     this->username = username;
     this->session = session;
+    if (session.empty())
+    {
+        this->session = to_string(rand() % 10000);
+    }
     this->sock = sock;
     init_sequences();
 }
@@ -14,16 +18,13 @@ Connection::~Connection()
     delete this->sock;
 }
 
-void Connection::connect(string hostname, int port)
+void Connection::connect()
 {
-    this->session = to_string(rand() % 10000);
-    this->sock = new Socket(port);
-    this->sock->set_host(hostname);
     send(Message::T_SYN, username);
     receive_ack();
     sock->set_dest_address(sock->get_sender_address());
     send_ack();
-    user_directory = HOME+"/sync_dir_"+username;
+    user_directory = HOME+"/sync_dir_"+username; 
     File::create_directory(user_directory);
 }
 
@@ -34,7 +35,6 @@ void Connection::accept_connection()
     receive_ack();
     user_directory = username;
     File::create_directory(user_directory);
-    debug("Connection " + session + " established");
 }
 
 void Connection::send(string type, string content)

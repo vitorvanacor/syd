@@ -3,7 +3,7 @@
 // Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
 array<string, 1> hide_from_debug = {""};
 
-void debug(string msg, const char *file, int line)
+void debug(string msg, const char *file, int line, int color)
 {
     #ifndef DEBUG
         return;
@@ -17,7 +17,11 @@ void debug(string msg, const char *file, int line)
         {
             if (it == filename) return;
         }
-        cout << filename;
+        if (color)
+        {
+            cout << "\033[" << color << "m";
+        }
+        cout << filename << "\033[0m";
     }
     cout << ": " << msg;
     if (line)

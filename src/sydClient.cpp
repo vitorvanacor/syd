@@ -4,6 +4,7 @@
 #include "Message.hpp"
 #include "File.hpp"
 #include "Connection.hpp"
+#include "ClientSync.hpp"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -37,7 +38,10 @@ int main(int argc, char *argv[])
     }
     cout << "Connection to " << hostname << "..." << endl;
     Connection *connection = new Connection(username);
-    connection->connect(hostname, port);
+    connection->sock = new Socket(port);
+    connection->sock->set_host(hostname);
+    connection->connect();
+    ClientSync client_sync(connection);
     cout << "Successfully logged in as " << username << "!" << endl;
     // Main loop
     string command, filename;

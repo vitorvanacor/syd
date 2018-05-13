@@ -1,5 +1,7 @@
 #include "ServerThread.hpp"
 
+#include "ServerSync.hpp"
+
 ServerThread::ServerThread(Connection* connection)
 {
     is_open = true;
@@ -14,8 +16,9 @@ ServerThread::~ServerThread()
 void* ServerThread::run()
 {
     connection->accept_connection();
-    
-    cout << connection->username << " successfully logged in!" << endl;
+    ServerSync server_sync(connection);
+    server_sync.start();
+    cout << connection->username << " logged in" << endl;
     while (true)
     {
         Message request = connection->receive_request();
@@ -29,7 +32,7 @@ void* ServerThread::run()
             connection->send_ack();
             cout << connection->username << " is uploading " << request.content << "..." << endl;
             connection->receive_file(request.content);
-            cout << connection->username << " successfully uploaded " << request.content << endl;
+            cout << connection->username << " uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {

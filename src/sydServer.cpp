@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
     cout << "Listening on port " << port << " for connections..." << endl;
     while (true)
     {
+        debug("Waiting for connection", __FILE__, __LINE__, Color::RED);
         Message msg = Message::parse(listener.receive());
         free_closed_threads(threads);
         msg.print('<');
@@ -41,7 +42,7 @@ int main(int argc, char *argv[])
             {
                 Connection* connection = new Connection(msg.content, msg.session, listener.get_answerer());
                 ServerThread* new_thread = new ServerThread(connection);
-                new_thread->run();
+                new_thread->start();
                 threads[msg.session] = new_thread;
             }
             else

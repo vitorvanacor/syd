@@ -13,7 +13,7 @@ public:
     Connection(string username, string session = "", Socket *new_socket = NULL);
     ~Connection();
 
-    void connect(string host, int port);
+    void connect();
     void accept_connection();
 
     void send(string type, string content = "");
@@ -31,13 +31,12 @@ public:
 
     string username;
     string user_directory;
+    string session;
+    Socket *sock;
 
   private:
     Message receive();
-    void init_sequences();
-
-    Socket *sock;
-    string session;
+    void init_sequences();    
 
     map<int, string> messages_sent;
     int last_sequence_sent;
