@@ -42,16 +42,24 @@ string File::list_directory(string dirpath)
     char create_time[256] = {0};
     char last_time[256] = {0};
 
-    dp = opendir (dirpath.c_str());
+    dp = opendir(dirpath.c_str());
     if (dp != NULL)
     {
         files += "Name|Created At|Modified At|Last Accessed At|\n";
         while ((ep = readdir(dp)))
-        {
+        {       
             if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
-            {
-                if (stat(ep->d_name, &fileInfo) == -1)
+            {   
+                char fullpath[100];
+                strcpy(fullpath,dirpath.c_str());
+                strcat(fullpath,"/");
+                strcat(fullpath,ep->d_name);
+
+                if (stat(fullpath, &fileInfo) == -1)
+                {
+                    perror(0);
                     continue;
+                }
                 tm = localtime(&fileInfo.st_mtime);
                 strftime(mod_time, sizeof(mod_time), nl_langinfo(D_T_FMT), tm);
                 tm = localtime(&fileInfo.st_ctime);
