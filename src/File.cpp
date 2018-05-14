@@ -83,11 +83,11 @@ string File::list_directory(string dirpath)
                     continue;
                 }
                 tm = localtime(&fileInfo.st_mtime);
-                strftime(mod_time, sizeof(mod_time), nl_langinfo(D_T_FMT), tm);
+                strftime(mod_time, sizeof(mod_time), "%H:%M:%S %d/%m/%Y", tm);
                 tm = localtime(&fileInfo.st_ctime);
-                strftime(create_time, sizeof(create_time), nl_langinfo(D_T_FMT), tm);
+                strftime(create_time, sizeof(create_time), "%H:%M:%S %d/%m/%Y", tm);
                 tm = localtime(&fileInfo.st_atime);
-                strftime(last_time, sizeof(last_time), nl_langinfo(D_T_FMT), tm);
+                strftime(last_time, sizeof(last_time), "%H:%M:%S %d/%m/%Y", tm);
 
                 files += ep->d_name;
                 files += "| ";
