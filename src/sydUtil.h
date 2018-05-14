@@ -18,7 +18,7 @@
 #include <string>
 #include <stdexcept>
 #include <vector>
-
+#include <list>
 
 using namespace std;
 
@@ -30,10 +30,12 @@ static const string HOME = string(getenv("HOME"));
 
 void debug(string msg, const char *file = NULL, int line = 0, int color = 0);
 string get_filename(string filepath);
+unsigned int get_filetimestamp(string filename);
 string without_extension(string filename);
 string working_directory();
 
-enum Color {
+enum Color
+{
   RED = 31,
   GREEN = 32,
   YELLOW = 33,
@@ -45,8 +47,8 @@ enum Color {
 
 class timeout_exception : public runtime_error
 {
-  public:
-    timeout_exception() : runtime_error("ERROR: Timeout") {}
+public:
+  timeout_exception() : runtime_error("ERROR: Timeout") {}
 };
 
 #endif

@@ -2,7 +2,7 @@
 
 #include "ServerSync.hpp"
 
-ServerThread::ServerThread(Connection* connection)
+ServerThread::ServerThread(Connection *connection)
 {
     is_open = true;
     this->connection = connection;
@@ -42,8 +42,10 @@ void *ServerThread::run()
                 if (!ifstream(connection->user_directory + '/' + request.content))
                 {
                     cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
+
                     connection->send(Message::T_ERROR);
                     connection->receive_ack();
+
                     continue;
                 }
                 connection->send(Message::T_SOF);
@@ -54,7 +56,11 @@ void *ServerThread::run()
             }
             catch (exception &e)
             {
+                connection->send(Message::T_ERROR);
+                connection->receive_ack();
+
                 cout << e.what() << endl;
+
                 continue;
             }
         }

@@ -12,6 +12,10 @@ const string Message::T_FILE = "FILE";
 const string Message::T_SOF = "SOF";
 const string Message::T_EOF = "EOF";
 const string Message::T_ERROR = "ERRO";
+const string Message::T_SYNC = "SYNC";
+const string Message::T_STAT = "STAT";
+const string Message::T_DONE = "DONE";
+const string Message::T_EQUAL = "EQAL";
 
 Message::Message(string session, int sequence, string type, string content = "")
 {

@@ -44,6 +44,7 @@ int main(int argc, char *argv[])
     connection->connect();
     ClientSync client_sync(connection);
     cout << "Successfully logged in as " << username << "!" << endl;
+
     // Main loop
     string command, filename;
     while (true)
@@ -76,6 +77,9 @@ int main(int argc, char *argv[])
             }
             catch (exception &e)
             {
+                connection->send(Message::T_ERROR);
+                connection->receive_ack();
+
                 cout << e.what() << endl;
                 continue;
             }

@@ -24,7 +24,7 @@ void Connection::connect()
     receive_ack();
     sock->set_dest_address(sock->get_sender_address());
     send_ack();
-    user_directory = HOME+"/sync_dir_"+username; 
+    user_directory = HOME + "/sync_dir_" + username;
     File::create_directory(user_directory);
 }
 
@@ -92,6 +92,7 @@ void Connection::receive_ack()
         }
     }
 }
+
 Message Connection::receive(string expected_type)
 {
     debug("Waiting for " + expected_type + "...", __FILE__);
@@ -103,6 +104,23 @@ Message Connection::receive(string expected_type)
         {
             last_sequence_received = msg.sequence;
             return msg;
+        }
+    }
+}
+
+Message Connection::receive(list<string> expected_types)
+{
+    while (true)
+    {
+        // TODO: consider that error or bye can be received too
+        Message msg = receive();
+        for (list<string>::iterator it = expected_types.begin(); it != expected_types.end(); ++it)
+        {
+            if (msg.type == *it)
+            {
+                last_sequence_received = msg.sequence;
+                return msg;
+            }
         }
     }
 }
