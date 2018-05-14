@@ -79,7 +79,10 @@ void *ClientSync::run()
 
                             continue;
                         }
-                        connection->send(Message::T_SOF);
+
+                        int timestamp = get_filetimestamp(filepath);
+
+                        connection->send(Message::T_SOF, to_string(timestamp));
                         connection->receive_ack();
 
                         debug("Starting to upload " + filename + " ...");

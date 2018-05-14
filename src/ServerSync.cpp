@@ -81,7 +81,9 @@ void *ServerSync::run()
                         connection->send(Message::T_DOWNLOAD);
                         connection->receive_ack();
 
-                        connection->send(Message::T_SOF);
+                        int timestamp = get_filetimestamp(filepath);
+
+                        connection->send(Message::T_SOF, to_string(timestamp));
                         connection->receive_ack();
 
                         if (connection->send_file(filepath) == 0)
@@ -145,7 +147,9 @@ void *ServerSync::run()
                             connection->send(Message::T_DOWNLOAD, filename);
                             connection->receive_ack();
 
-                            connection->send(Message::T_SOF);
+                            int timestamp = get_filetimestamp(filepath);
+
+                            connection->send(Message::T_SOF, to_string(timestamp));
                             connection->receive_ack();
 
                             if (connection->send_file(filepath) == 0)

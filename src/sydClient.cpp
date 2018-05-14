@@ -70,7 +70,9 @@ int main(int argc, char *argv[])
                 connection->send(Message::T_UPLOAD, filename);
                 connection->receive_ack();
 
-                connection->send(Message::T_SOF);
+                int timestamp = get_filetimestamp(filepath);
+
+                connection->send(Message::T_SOF, to_string(timestamp));
                 connection->receive_ack();
 
                 cout << "Uploading " << filename << "..." << endl;

@@ -1,5 +1,7 @@
 #include "Connection.hpp"
 
+#include <utime.h>
+
 Connection::Connection(string username, string session, Socket *sock)
 {
     this->username = username;
@@ -181,6 +183,7 @@ int Connection::receive_file(string filepath)
     debug("Waiting for data!");
 
     ofstream file;
+    int timestamp;
 
     while (true)
     {
@@ -190,7 +193,10 @@ int Connection::receive_file(string filepath)
             if (msg.type == Message::T_SOF)
             {
                 last_sequence_received = msg.sequence;
+                timestamp = stoi(msg.content);
+
                 file.open(filepath, ofstream::binary | ofstream::trunc);
+
                 send_ack();
             }
             else if (msg.type == Message::T_FILE)
@@ -199,18 +205,40 @@ int Connection::receive_file(string filepath)
                 file.write(msg.content.data(), msg.content.length());
                 send_ack();
             }
-            else if (msg.type == Message::T_ERROR)
-            {
-                last_sequence_received = msg.sequence;
-                send_ack();
-                file.close();
-                return -1;
-            }
             else if (msg.type == Message::T_EOF)
             {
                 last_sequence_received = msg.sequence;
                 send_ack();
+                file.close();
+
+                cout << "TIMESTAMP: " << get_filetimestamp(filepath) << endl;
+
+                // Sets modification time
+                struct utimbuf ubuf;
+                ubuf.modtime = timestamp;
+                //time(&ubuf.actime);
+                struct stat info;
+                stat(filepath.c_str(), &info);
+                printf("  BEFORE utime.file modification time is %ld\n",
+                       info.st_mtime);
+                if (utime(filepath.c_str(), &ubuf) != 0)
+                    perror("utime() error");
+                else
+                {
+                    puts("after utime()");
+                    stat(filepath.c_str(), &info);
+                    printf("  AFTER utime.file modification time is %ld\n",
+                           info.st_mtime);
+                }
+
                 return 0;
+            }
+            else if (msg.type == Message::T_ERROR)
+            {
+
+                last_sequence_received = msg.sequence;
+                send_ack();
+                return -1;
             }
         }
     }

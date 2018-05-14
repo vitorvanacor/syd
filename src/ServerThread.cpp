@@ -50,8 +50,11 @@ void *ServerThread::run()
 
                     continue;
                 }
-                connection->send(Message::T_SOF);
+                int timestamp = get_filetimestamp(filepath);
+
+                connection->send(Message::T_SOF, to_string(timestamp));
                 connection->receive_ack();
+
                 cout << connection->username << " is downloading " << request.content << "..." << endl;
                 connection->send_file(filepath);
                 cout << connection->username << " downloaded " << request.content << endl;
