@@ -27,6 +27,7 @@ public:
   Message receive_request();
   void receive_ack();
   int receive_file(string filepath);
+    string list_server_dir(string dirpath);
 
   static void *server_thread(void *void_this);
 

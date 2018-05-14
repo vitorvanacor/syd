@@ -16,6 +16,7 @@
 #include <langinfo.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <iomanip>
 
 int main(int argc, char *argv[])
 {
@@ -97,7 +98,7 @@ int main(int argc, char *argv[])
         {
             connection->send(Message::T_LS);
             string server_list = connection->receive(Message::T_LS).content;
-            cout << server_list << endl;
+            list_server_parser(server_list);
             connection->send_ack();
         }
         else if (command == "list_client" || command == "lc")
@@ -146,4 +147,24 @@ void list_client(string username)
         strftime(datestring, sizeof(datestring), nl_langinfo(D_T_FMT), tm);
         printf(" %s %s\n", datestring, dp->d_name);
     }
+}
+
+void printElement(string data, int width, char separator)
+{
+    cout << left << setw(width) << setfill(separator) << data;
+}
+
+void list_server_parser(string filelist)
+{
+    char separator = ' ';
+    int fieldWidth = 26;
+    string delimiter = "|";
+    string token;
+    int pos = 0;
+    while ((pos = filelist.find(delimiter)) != std::string::npos) {
+        token = filelist.substr(0, pos);
+        printElement(token,fieldWidth,separator);
+        filelist.erase(0, pos + delimiter.length());
+    }
+    cout << endl;
 }
