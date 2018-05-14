@@ -73,10 +73,16 @@ void *ServerSync::run()
                             connection->send(Message::T_ERROR);
                             connection->receive_ack();
                         }
+                        connection->send(Message::T_DOWNLOAD);
+                        connection->receive_ack();
+
                         connection->send(Message::T_SOF);
                         connection->receive_ack();
 
-                        connection->send_file(connection->user_directory + "/" + filename);
+                        if (connection->send_file(connection->user_directory + "/" + filename) == 0)
+                            debug(filename + " downloaded successfully.");
+                        else
+                            debug(filename + " download failed.");
                     }
                     catch (exception &e)
                     {
@@ -93,8 +99,10 @@ void *ServerSync::run()
                     connection->receive_ack();
 
                     debug("Uploading " + filename + " ...");
-                    connection->receive_file(connection->user_directory + "/" + filename);
-                    debug(filename + " uploaded.");
+                    if (connection->receive_file(connection->user_directory + "/" + filename) == 0)
+                        debug(filename + " uploaded successfully.");
+                    else
+                        debug(filename + " upload failed.");
                 }
                 else
                 {

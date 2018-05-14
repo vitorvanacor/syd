@@ -46,14 +46,14 @@ void *ClientSync::run()
             connection->receive_ack();
 
             list<string> expected_types;
-            expected_types.push_back(Message::T_SOF);
+            expected_types.push_back(Message::T_DOWNLOAD);
             expected_types.push_back(Message::T_UPLOAD);
             expected_types.push_back(Message::T_EQUAL);
             expected_types.push_back(Message::T_ERROR);
 
             Message msg = connection->receive(expected_types);
 
-            if (msg.type == Message::T_SOF)
+            if (msg.type == Message::T_DOWNLOAD)
             {
                 debug("Starting to download" + filename + " ...");
 
