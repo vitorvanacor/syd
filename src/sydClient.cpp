@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
         else if (command == "list_server" || command == "ls")
         {
             connection->send(Message::T_LS);
-            string server_list = connection->receive(Message::T_LS).content;
+            string server_list = connection->receive_string();
             list_server_parser(server_list);
             connection->send_ack();
         }
