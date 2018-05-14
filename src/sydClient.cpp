@@ -60,17 +60,21 @@ int main(int argc, char *argv[])
         {
             try
             {
-                if (!ifstream(filename))
+                string filepath = connection->user_directory + '/' + filename;
+                if (!ifstream(filepath))
                 {
-                    cout << "Error opening file " << filename << " at " << working_directory() << endl;
+                    cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
                     continue;
                 }
+
                 connection->send(Message::T_UPLOAD, filename);
                 connection->receive_ack();
+
                 connection->send(Message::T_SOF);
                 connection->receive_ack();
+
                 cout << "Uploading " << filename << "..." << endl;
-                if (connection->send_file(filename) == 0)
+                if (connection->send_file(filepath) == 0)
                     cout << filename << " uploaded successfully!" << endl;
                 else
                     cout << filename << " uploaded failed!" << endl;
@@ -89,7 +93,8 @@ int main(int argc, char *argv[])
             connection->send(Message::T_DOWNLOAD, filename);
             connection->receive_ack();
             cout << "Downloading " << filename << "..." << endl;
-            if (connection->receive_file(filename) == 0)
+            string filepath = connection->user_directory + '/' + filename;
+            if (connection->receive_file(filepath) == 0)
                 cout << filename << " downloaded successfully!" << endl;
             else
                 cout << filename << " downloaded failed!" << endl;
@@ -161,9 +166,10 @@ void list_server_parser(string filelist)
     string delimiter = "|";
     string token;
     int pos = 0;
-    while ((pos = filelist.find(delimiter)) != std::string::npos) {
+    while ((pos = filelist.find(delimiter)) != std::string::npos)
+    {
         token = filelist.substr(0, pos);
-        printElement(token,fieldWidth,separator);
+        printElement(token, fieldWidth, separator);
         filelist.erase(0, pos + delimiter.length());
     }
     cout << endl;

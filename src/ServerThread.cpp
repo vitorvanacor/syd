@@ -29,9 +29,10 @@ void *ServerThread::run()
         }
         else if (request.type == Message::T_UPLOAD)
         {
+            string filepath = connection->user_directory + '/' + request.content;
             connection->send_ack();
             cout << connection->username << " is uploading " << request.content << "..." << endl;
-            connection->receive_file(connection->user_directory + "/" + request.content);
+            connection->receive_file(filepath);
             cout << connection->username << " uploaded " << request.content << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
@@ -39,7 +40,8 @@ void *ServerThread::run()
             connection->send_ack();
             try
             {
-                if (!ifstream(connection->user_directory + '/' + request.content))
+                string filepath = connection->user_directory + '/' + request.content;
+                if (!ifstream(filepath))
                 {
                     cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
 
@@ -51,7 +53,7 @@ void *ServerThread::run()
                 connection->send(Message::T_SOF);
                 connection->receive_ack();
                 cout << connection->username << " is downloading " << request.content << "..." << endl;
-                connection->send_file(connection->user_directory + "/" + request.content);
+                connection->send_file(filepath);
                 cout << connection->username << " downloaded " << request.content << endl;
             }
             catch (exception &e)
