@@ -31,6 +31,28 @@ unsigned int get_filesize(string filename)
     return info.st_size;   
 }
 
+list<string> File::list_filename(string dirpath)
+{
+    list <string> filenames;
+    DIR *dp;
+    struct dirent *ep;
+    dp = opendir(dirpath.c_str());
+    if (dp != NULL)
+    {
+        while ((ep = readdir(dp)))
+        {
+            if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
+            {   
+                filenames.push_back(ep->d_name);
+            }
+        }
+        (void) closedir (dp);
+    }
+    else
+        debug("Couldn't open the directory");
+    return filenames;
+}
+
 string File::list_directory(string dirpath)
 {
     DIR *dp;
