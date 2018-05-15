@@ -130,7 +130,10 @@ void *ServerSync::run()
                 if (files_to_update.size() == 0)
                 {
                     connection->send(Message::T_DONE);
+                    debug("WAITING LAST ACK", __FILE__,__LINE__,Color::MAGENTA);
                     connection->receive_ack();
+                    debug("RECEIVED LAST ACK", __FILE__,__LINE__,Color::RED);
+                    break;
                 }
                 else
                 {
@@ -175,8 +178,9 @@ void *ServerSync::run()
                     }
 
                     connection->send(Message::T_DONE);
+                    debug("WAITING LAST ACK", __FILE__,__LINE__,Color::MAGENTA);
                     connection->receive_ack();
-                    debug("BREAK RECEIVE STAT", __FILE__,__LINE__,Color::RED);
+                    debug("RECEIVED LAST ACK", __FILE__,__LINE__,Color::RED);
                     break;
                 }
             }
