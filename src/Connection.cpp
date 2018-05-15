@@ -268,24 +268,17 @@ int Connection::receive_file(string filepath)
                 send_ack();
                 file.close();
 
-                cout << "TIMESTAMP: " << get_filetimestamp(filepath) << endl;
-
                 // Sets modification time
                 struct utimbuf ubuf;
                 ubuf.modtime = timestamp;
                 //time(&ubuf.actime);
                 struct stat info;
                 stat(filepath.c_str(), &info);
-                printf("  BEFORE utime.file modification time is %ld\n",
-                       info.st_mtime);
                 if (utime(filepath.c_str(), &ubuf) != 0)
                     perror("utime() error");
                 else
                 {
-                    puts("after utime()");
                     stat(filepath.c_str(), &info);
-                    printf("  AFTER utime.file modification time is %ld\n",
-                           info.st_mtime);
                 }
 
                 return 0;

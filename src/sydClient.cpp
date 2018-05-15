@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[3]);
     }
-    cout << "Connection to " << hostname << "..." << endl;
+    cout << "Connecting to " << hostname << ":" << port << " ..." << endl;
     Connection *connection = new Connection(username);
     connection->sock = new Socket(port);
     connection->sock->set_host(hostname);
@@ -60,10 +60,9 @@ int main(int argc, char *argv[])
         {
             try
             {
-                string filepath = connection->user_directory + '/' + filename;
-                if (!ifstream(filepath))
+                if (!ifstream(filename))
                 {
-                    cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
+                    cout << "Error opening file " << filename << " at " << working_directory() << endl;
                     continue;
                 }
 
@@ -75,12 +74,12 @@ int main(int argc, char *argv[])
                     connection->send_ack();
                     continue;
                 }
-                int timestamp = get_filetimestamp(filepath);
+                int timestamp = get_filetimestamp(filename);
                 connection->send(Message::T_SOF, to_string(timestamp));
                 connection->receive_ack();
 
                 cout << "Uploading " << filename << "..." << endl;
-                if (connection->send_file(filepath) == 0)
+                if (connection->send_file(filename) == 0)
                     cout << filename << " uploaded successfully!" << endl;
                 else
                     cout << filename << " uploaded failed!" << endl;

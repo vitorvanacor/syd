@@ -77,7 +77,7 @@ void *ServerSync::run()
                 // Compares timestamp
                 if (timestamp_remote < timestamp_local)
                 {
-                    cout << "Client needs to download" << endl;
+                    cout << connection->username << " needs to download " << filename << endl;
                     try
                     {
                         connection->send(Message::T_DOWNLOAD);
@@ -102,7 +102,7 @@ void *ServerSync::run()
                 }
                 else if (timestamp_remote > timestamp_local || timestamp_local == -1)
                 {
-                    cout << "Client needs to upload" << endl;
+                    cout << connection->username << " needs to upload " << filename << endl;
                     connection->send(Message::T_UPLOAD);
                     connection->receive_ack();
 
@@ -138,12 +138,11 @@ void *ServerSync::run()
                 {
                     for (list<string>::iterator it = files_to_update.begin(); it != files_to_update.end(); ++it)
                     {
-                        cout << "CLIENT DOESNT HAVE: " << *it << endl;
                         try
                         {
                             string filename = *it;
                             string filepath = connection->user_directory + '/' + filename;
-
+                            cout << connection->username << " needs to download " << filename << endl;
                             if (!ifstream(filepath))
                             {
                                 cout << "Error opening file " << *it << " at " << connection->user_directory << endl;
