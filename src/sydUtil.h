@@ -22,7 +22,7 @@
 
 using namespace std;
 
-#define DEFAULT_PORT 4001
+#define DEFAULT_PORT 4000
 #define DEFAULT_HOSTNAME "localhost"
 #define DEFAULT_USERNAME "default_user"
 
