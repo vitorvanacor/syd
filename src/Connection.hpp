@@ -20,6 +20,7 @@ public:
   void sendb(string stype, char *content = NULL);
   void send_ack(bool ok = true);
   int send_file(string filepath);
+  void send_string(string data);
   void resend();
 
   Message receive(string expected_type);
@@ -27,6 +28,7 @@ public:
   Message receive_request();
   bool receive_ack();
   int receive_file(string filepath);
+  string receive_string();
   string list_server_dir(string dirpath);
 
   static void *server_thread(void *void_this);

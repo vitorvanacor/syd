@@ -114,13 +114,13 @@ int main(int argc, char *argv[])
         else if (command == "list_server" || command == "ls")
         {
             connection->send(Message::T_LS);
-            string server_list = connection->receive(Message::T_LS).content;
-            list_server_parser(server_list);
+            string server_list = connection->receive_string();
+            filelist_parser(server_list);
             connection->send_ack();
         }
         else if (command == "list_client" || command == "lc")
         {
-            list_client(HOME + "/sync_dir_" + username);
+            list_client(connection->user_directory);
         }
         else if (command == "exit")
         {
@@ -140,30 +140,53 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-void list_client(string username)
+void list_client(string userdir)
 {
-    DIR *dir = opendir(username.c_str());
-    struct dirent *dp;
-    struct stat statbuf;
+    DIR *dp = opendir(userdir.c_str());
+    struct dirent *ep;
+    struct stat fileInfo;
     struct passwd *pwd;
     struct group *grp;
     struct tm *tm;
-    char datestring[256];
-
-    while ((dp = readdir(dir)) != NULL)
+    string files = "";
+    char mod_time[256] = {0};
+    char create_time[256] = {0};
+    char last_time[256] = {0};
+    
+    if (dp != NULL)
     {
-        /* Get entry's information. */
-        if (stat(dp->d_name, &statbuf) == -1)
-            continue;
+        files += "Name|Created At|Modified At|Last Accessed At|\n";
+        while ((ep = readdir(dp)) != NULL)
+        {
+            if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
+            {   
+                if (stat(userdir.c_str(), &fileInfo) == -1)
+                {
+                    perror(0);
+                    continue;
+                }
+                tm = localtime(&fileInfo.st_mtime);
+                strftime(mod_time, sizeof(mod_time), nl_langinfo(D_T_FMT), tm);
+                tm = localtime(&fileInfo.st_ctime);
+                strftime(create_time, sizeof(create_time), nl_langinfo(D_T_FMT), tm);
+                tm = localtime(&fileInfo.st_atime);
+                strftime(last_time, sizeof(last_time), nl_langinfo(D_T_FMT), tm);
 
-        /* Print size of file. */
-        //printf("%u", (intmax_t)statbuf.st_size);
-
-        tm = localtime(&statbuf.st_mtime);
-        /* Get localized date string. */
-        strftime(datestring, sizeof(datestring), nl_langinfo(D_T_FMT), tm);
-        printf(" %s %s\n", datestring, dp->d_name);
+                files += ep->d_name;
+                files += "| ";
+                files += create_time;
+                files += "| ";
+                files += mod_time;
+                files += "| ";
+                files += last_time;
+                files += "|\n";
+            }
+        }
+        (void) closedir (dp);
+        filelist_parser(files);
     }
+    else
+        debug("Couldn't open user sync dir");
 }
 
 void printElement(string data, int width, char separator)
@@ -171,7 +194,7 @@ void printElement(string data, int width, char separator)
     cout << left << setw(width) << setfill(separator) << data;
 }
 
-void list_server_parser(string filelist)
+void filelist_parser(string filelist)
 {
     char separator = ' ';
     int fieldWidth = 26;

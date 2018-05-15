@@ -3,6 +3,6 @@
 #include "sydUtil.h"
 
 void list_client(string username);
-void list_server_parser(string filelist);
+void filelist_parser(string filelist);
 
 #endif

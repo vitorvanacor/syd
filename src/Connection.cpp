@@ -75,6 +75,21 @@ int Connection::send_file(string filepath)
     return 0;
 }
 
+void Connection::send_string(string data)
+{
+    string buffer;
+    int pos = PACKET_SIZE;
+    do
+    {
+        buffer = data.substr(0, pos);
+        send(Message::T_LS, buffer);
+        receive_ack();
+        data.erase(0, pos);
+    } while (data.length() > 0);
+    send(Message::T_EOF);
+    receive_ack();
+}
+
 void Connection::resend()
 {
     for (map<int, string>::iterator it = messages_sent.begin(); it != messages_sent.end(); ++it)
@@ -190,6 +205,32 @@ Message Connection::receive()
         catch (runtime_error &e)
         {
             cout << e.what() << endl;
+        }
+    }
+}
+
+string Connection::receive_string()
+{
+    debug("Waintg for string data");
+
+    string received_data;
+
+    while(true)
+    {
+        Message msg = receive();
+        {
+            if (msg.type == Message::T_LS)
+            {
+                last_sequence_received = msg.sequence;
+                received_data += msg.content;
+                send_ack();
+            }
+            else if (msg.type == Message::T_EOF)
+            {
+                last_sequence_received = msg.sequence;
+                send_ack();
+                return received_data;
+            }
         }
     }
 }

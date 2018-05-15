@@ -24,7 +24,7 @@ void *ServerThread::run()
         Message request = connection->receive_request();
         if (request.type == Message::T_LS)
         {
-            connection->send(Message::T_LS, connection->list_server_dir(connection->user_directory));
+            connection->send_string(connection->list_server_dir(connection->user_directory));
             connection->receive_ack();
         }
         else if (request.type == Message::T_UPLOAD)
