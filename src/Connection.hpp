@@ -18,7 +18,7 @@ public:
 
   void send(string type, string content = "");
   void sendb(string stype, char *content = NULL);
-  void send_ack();
+  void send_ack(bool ok = true);
   int send_file(string filepath);
   void resend();
 

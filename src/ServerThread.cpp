@@ -34,7 +34,7 @@ void *ServerThread::run()
             if (!can_be_transfered(request.content))
             {
                 cout << "Error: File " << filename << " already being transfered" << endl;
-                connection->send(Message::T_ERROR);
+                connection->send_ack(false);
                 connection->receive_ack();
                 continue;
             }
@@ -51,8 +51,9 @@ void *ServerThread::run()
             if (!can_be_transfered(filename))
             {
                 cout << "Error: File " << filename << " already being transfered" << endl;
-                connection->send(Message::T_ERROR);
+                connection->send_ack(false);
                 connection->receive_ack();
+                cout << "Continuing" << endl;
                 continue;
             }
             connection->send_ack();
@@ -62,9 +63,9 @@ void *ServerThread::run()
                 {
                     cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
 
-                    connection->send(Message::T_ERROR);
+                    connection->send_ack(false);
                     connection->receive_ack();
-
+                    unlock_file(filename);
                     continue;
                 }
                 int timestamp = get_filetimestamp(filepath);
@@ -79,13 +80,14 @@ void *ServerThread::run()
             }
             catch (exception &e)
             {
-                connection->send(Message::T_ERROR);
+                connection->send_ack(false);
                 connection->receive_ack();
 
                 cout << e.what() << endl;
-
+                unlock_file(filename);
                 continue;
             }
+            unlock_file(filename);
         }
         else if (request.type == Message::T_BYE)
         {

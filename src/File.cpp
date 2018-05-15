@@ -5,13 +5,6 @@
 #include <langinfo.h>
 #include <time.h>
 
-File::File(string path)
-{
-    this->path = path;
-}
-
-File::~File(){};
-
 void File::create_directory(string path)
 {
     int status = mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
@@ -107,10 +100,3 @@ string File::list_directory(string dirpath)
     return files;
 }
 
-// Getters
-string File::GetPath()
-{
-    return path;
-}
-
-// Setters

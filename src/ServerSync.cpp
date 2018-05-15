@@ -66,7 +66,7 @@ void *ServerSync::run()
                 if (!can_be_transfered(filename))
                 {
                     cout << filename << " currently being transfered" << endl;
-                    connection->send(Message::T_ERROR);
+                    connection->send_ack(false);
                     connection->receive_ack();
                     continue;
                 }
@@ -114,7 +114,6 @@ void *ServerSync::run()
                 }
                 else
                 {
-                    cout << "Same file." << endl;
                     connection->send(Message::T_EQUAL);
                     connection->receive_ack();
                 }

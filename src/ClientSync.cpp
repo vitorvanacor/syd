@@ -28,6 +28,7 @@ void *ClientSync::run()
 {
     while (true)
     {
+        debug("INIT SYNC",__FILE__,__LINE__,Color::GREEN);
         connection->send(Message::T_SYNC);
         connection->receive_ack();
 
@@ -60,7 +61,7 @@ void *ClientSync::run()
                         if (connection->receive_file(filepath) == 0)
                             debug(filename + " downloaded successfully!");
                         else
-                            debug(filename + " downloaded failed!");
+                            debug(filename + " download failed!");
                     }
                     else if (msg.type == Message::T_UPLOAD)
                     {
@@ -72,7 +73,7 @@ void *ClientSync::run()
                             {
                                 cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
 
-                                connection->send(Message::T_ERROR);
+                                connection->send_ack(false);
                                 connection->receive_ack();
 
                                 unlock_file(filename);
@@ -94,7 +95,7 @@ void *ClientSync::run()
                         {
                             cout << e.what() << endl;
 
-                            connection->send(Message::T_ERROR);
+                            connection->send_ack(false);
                             connection->receive_ack();
                             unlock_file(filename);
                             continue;
@@ -156,14 +157,14 @@ void *ClientSync::run()
                     }
                     else
                     {
-                        debug(filename + " downloaded failed!");
+                        debug(filename + " download failed!");
                     }
                     unlock_file(filename);
                 }
                 else
                 {
                     cout << "Error: File " << filename << " already being transfered" << endl;
-                    connection->send(Message::T_ERROR);
+                    connection->send_ack(false);
                     connection->receive_ack();
                     continue;
                 }
@@ -175,6 +176,7 @@ void *ClientSync::run()
                 continue;
             }
         }
-        sleep(10);
+        debug("SLEEPING for 5",__FILE__,__LINE__,Color::RED);
+        sleep(5);
     }
 }

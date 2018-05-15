@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
             }
             catch (exception &e)
             {
-                connection->send(Message::T_ERROR);
+                connection->send_ack(false);
                 connection->receive_ack();
 
                 cout << e.what() << endl;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
             if (connection->receive_file(filepath) == 0)
                 cout << filename << " downloaded successfully!" << endl;
             else
-                cout << filename << " downloaded failed!" << endl;
+                cout << filename << " download failed!" << endl;
         }
         else if (command == "list_server" || command == "ls")
         {

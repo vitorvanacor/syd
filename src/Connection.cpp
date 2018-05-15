@@ -48,9 +48,16 @@ void Connection::send(string type, string content)
     messages_sent[last_sequence_sent] = msg.to_string();
 }
 
-void Connection::send_ack()
+void Connection::send_ack(bool ok)
 {
-    send(Message::T_ACK, to_string(last_sequence_received));
+    if (ok)
+    {
+        send(Message::T_ACK, to_string(last_sequence_received));
+    }
+    else
+    {
+        send(Message::T_ERROR, to_string(last_sequence_received));
+    }
 }
 
 int Connection::send_file(string filepath)

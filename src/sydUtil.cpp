@@ -32,7 +32,7 @@ void unlock_file (string filename)
 
 
 // Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
-array<string, 1> hide_from_debug = {""};
+array<string, 2> hide_from_debug = {"Message", "Socket"};
 
 void debug(string msg, const char *file, int line, int color)
 {
