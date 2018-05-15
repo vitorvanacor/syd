@@ -25,7 +25,7 @@ public:
   Message receive(string expected_type);
   Message receive(list<string> expected_types);
   Message receive_request();
-  void receive_ack();
+  bool receive_ack();
   int receive_file(string filepath);
   string list_server_dir(string dirpath);
 

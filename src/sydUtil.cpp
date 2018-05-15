@@ -1,5 +1,36 @@
 #include "sydUtil.h"
 
+list<string> files_in_sync;
+pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool can_be_transfered (string filename)
+{
+    pthread_mutex_lock(&sync_mutex);
+    bool can_transfer = true;
+    for (string &it : files_in_sync)
+    {
+        if (it == filename)
+        {
+            can_transfer = false;
+            break;
+        }
+    }
+    if (can_transfer)
+    {
+        files_in_sync.push_back(filename);
+    }
+    pthread_mutex_unlock(&sync_mutex);
+    return can_transfer;
+}
+
+void unlock_file (string filename)
+{
+    pthread_mutex_lock(&sync_mutex);
+    files_in_sync.remove(filename);
+    pthread_mutex_unlock(&sync_mutex);
+}
+
+
+
 // Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
 array<string, 1> hide_from_debug = {""};
 

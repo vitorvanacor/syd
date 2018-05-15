@@ -28,6 +28,9 @@ using namespace std;
 
 static const string HOME = string(getenv("HOME"));
 
+bool can_be_transfered(string filename);
+void unlock_file(string fil);
+
 void debug(string msg, const char *file = NULL, int line = 0, int color = 0);
 string get_filename(string filepath);
 unsigned int get_filetimestamp(string filename);

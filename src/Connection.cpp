@@ -77,7 +77,7 @@ void Connection::resend()
     }
 }
 
-void Connection::receive_ack()
+bool Connection::receive_ack()
 {
     debug("Waiting for ACK " + to_string(last_sequence_sent) + "...");
     while (true)
@@ -85,11 +85,20 @@ void Connection::receive_ack()
         Message msg = receive();
         {
             // TODO: consider that error or bye can be received too
-            if (msg.type == Message::T_ACK && stoi(msg.content) == last_sequence_sent)
+            if (stoi(msg.content) == last_sequence_sent)
             {
-                last_sequence_received = msg.sequence;
-                messages_sent.clear();
-                return;
+                if (msg.type == Message::T_ACK)
+                {
+                    last_sequence_received = msg.sequence;
+                    messages_sent.clear();
+                    return true;
+                }
+                else if (msg.type == Message::T_ERROR)
+                {
+                    last_sequence_received = msg.sequence;
+                    messages_sent.clear();
+                    return false;
+                }
             }
         }
     }

@@ -28,8 +28,6 @@ void *ClientSync::run()
 {
     while (true)
     {
-        debug("RUNNING CLIENT SYNC", __FILE__, __LINE__, Color::GREEN);
-
         connection->send(Message::T_SYNC);
         connection->receive_ack();
 
@@ -39,85 +37,91 @@ void *ClientSync::run()
         {
             string filename = *it;
             string filepath = connection->user_directory + '/' + filename;
-
-            int timestamp = get_filetimestamp(filepath);
-            if (timestamp != -1)
+            if (can_be_transfered(filename))
             {
-                string content = to_string(timestamp) + '|' + filename;
-                connection->send(Message::T_STAT, content);
-                connection->receive_ack();
-
-                list<string> expected_types;
-                expected_types.push_back(Message::T_DOWNLOAD);
-                expected_types.push_back(Message::T_UPLOAD);
-                expected_types.push_back(Message::T_EQUAL);
-                expected_types.push_back(Message::T_ERROR);
-
-                Message msg = connection->receive(expected_types);
-
-                if (msg.type == Message::T_DOWNLOAD)
+                int timestamp = get_filetimestamp(filepath);
+                if (timestamp != -1)
                 {
-                    debug("Starting to download" + filename + " ...");
-                    connection->send_ack();
-                    if (connection->receive_file(filepath) == 0)
-                        debug(filename + " downloaded successfully!");
-                    else
-                        debug(filename + " downloaded failed!");
-                }
-                else if (msg.type == Message::T_UPLOAD)
-                {
-                    debug("Starting to upload" + filename + " ...");
-                    connection->send_ack();
-                    try
+                    string content = to_string(timestamp) + '|' + filename;
+                    connection->send(Message::T_STAT, content);
+                    connection->receive_ack();
+                    list<string> expected_types;
+                    expected_types.push_back(Message::T_DOWNLOAD);
+                    expected_types.push_back(Message::T_UPLOAD);
+                    expected_types.push_back(Message::T_EQUAL);
+                    expected_types.push_back(Message::T_ERROR);
+
+                    Message msg = connection->receive(expected_types);
+
+                    if (msg.type == Message::T_DOWNLOAD)
                     {
-                        if (!ifstream(filepath))
+                        debug("Starting to download" + filename + " ...");
+                        connection->send_ack();
+                        if (connection->receive_file(filepath) == 0)
+                            debug(filename + " downloaded successfully!");
+                        else
+                            debug(filename + " downloaded failed!");
+                    }
+                    else if (msg.type == Message::T_UPLOAD)
+                    {
+                        debug("Starting to upload" + filename + " ...");
+                        connection->send_ack();
+                        try
                         {
-                            cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
+                            if (!ifstream(filepath))
+                            {
+                                cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
+
+                                connection->send(Message::T_ERROR);
+                                connection->receive_ack();
+
+                                unlock_file(filename);
+                                continue;
+                            }
+
+                            int timestamp = get_filetimestamp(filepath);
+
+                            connection->send(Message::T_SOF, to_string(timestamp));
+                            connection->receive_ack();
+
+                            debug("Starting to upload " + filename + " ...");
+                            if (connection->send_file(filepath) == 0)
+                                debug(filename + " uploaded successfully!");
+                            else
+                                debug(filename + " uploaded failed!");
+                        }
+                        catch (exception &e)
+                        {
+                            cout << e.what() << endl;
 
                             connection->send(Message::T_ERROR);
                             connection->receive_ack();
-
+                            unlock_file(filename);
                             continue;
                         }
-
-                        int timestamp = get_filetimestamp(filepath);
-
-                        connection->send(Message::T_SOF, to_string(timestamp));
-                        connection->receive_ack();
-
-                        debug("Starting to upload " + filename + " ...");
-                        if (connection->send_file(filepath) == 0)
-                            debug(filename + " uploaded successfully!");
-                        else
-                            debug(filename + " uploaded failed!");
                     }
-                    catch (exception &e)
+                    else if (msg.type == Message::T_EQUAL)
                     {
-                        cout << e.what() << endl;
-
-                        connection->send(Message::T_ERROR);
-                        connection->receive_ack();
-
+                        debug("File is already up-to-date.");
+                        connection->send_ack();
+                        unlock_file(filename);
+                        continue;
+                    }
+                    else
+                    {
+                        debug("File currently being transfered");
+                        connection->send_ack();
+                        unlock_file(filename);
                         continue;
                     }
                 }
-                else if (msg.type == Message::T_EQUAL)
-                {
-                    debug("File is already up-to-date.");
-                    connection->send_ack();
-                    continue;
-                }
                 else
                 {
-                    debug("Error! File not found!");
-                    connection->send_ack();
+                    debug("Error generating timestamp!");
+                    unlock_file(filename);
                     continue;
                 }
-            }
-            else
-            {
-                debug("Error generating timestamp!");
-                continue;
+                unlock_file(filename);
             }
         }
         connection->send(Message::T_DONE);
@@ -140,13 +144,29 @@ void *ClientSync::run()
             }
             else if (msg.type == Message::T_DOWNLOAD)
             {
-                debug("Starting to download" + msg.content + " ...");
-                connection->send_ack();
-                string filepath = connection->user_directory + '/' + msg.content;
-                if (connection->receive_file(filepath) == 0)
-                    debug(msg.content + " downloaded successfully!");
+                string filename = msg.content;
+                string filepath = connection->user_directory + '/' + filename;
+                if (can_be_transfered(filename))
+                {
+                    debug("Starting to download" + filename + " ...");
+                    connection->send_ack();
+                    if (connection->receive_file(filepath) == 0)
+                    {
+                        debug(filename + " downloaded successfully!");
+                    }
+                    else
+                    {
+                        debug(filename + " downloaded failed!");
+                    }
+                    unlock_file(filename);
+                }
                 else
-                    debug(msg.content + " downloaded failed!");
+                {
+                    cout << "Error: File " << filename << " already being transfered" << endl;
+                    connection->send(Message::T_ERROR);
+                    connection->receive_ack();
+                    continue;
+                }
             }
             else
             {
@@ -155,7 +175,6 @@ void *ClientSync::run()
                 continue;
             }
         }
-
-        sleep(1000);
+        sleep(10);
     }
 }

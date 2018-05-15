@@ -29,18 +29,35 @@ void *ServerThread::run()
         }
         else if (request.type == Message::T_UPLOAD)
         {
-            string filepath = connection->user_directory + '/' + request.content;
+            string filename = request.content;
+            string filepath = connection->user_directory + '/' + filename;
+            if (!can_be_transfered(request.content))
+            {
+                cout << "Error: File " << filename << " already being transfered" << endl;
+                connection->send(Message::T_ERROR);
+                connection->receive_ack();
+                continue;
+            }
             connection->send_ack();
-            cout << connection->username << " is uploading " << request.content << "..." << endl;
+            cout << connection->username << " is uploading " << filename << "..." << endl;
             connection->receive_file(filepath);
-            cout << connection->username << " uploaded " << request.content << endl;
+            unlock_file(filename);
+            cout << connection->username << " uploaded " << filename << endl;
         }
         else if (request.type == Message::T_DOWNLOAD)
         {
+            string filename = request.content;
+            string filepath = connection->user_directory + '/' + filename;
+            if (!can_be_transfered(filename))
+            {
+                cout << "Error: File " << filename << " already being transfered" << endl;
+                connection->send(Message::T_ERROR);
+                connection->receive_ack();
+                continue;
+            }
             connection->send_ack();
             try
             {
-                string filepath = connection->user_directory + '/' + request.content;
                 if (!ifstream(filepath))
                 {
                     cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
@@ -57,6 +74,7 @@ void *ServerThread::run()
 
                 cout << connection->username << " is downloading " << request.content << "..." << endl;
                 connection->send_file(filepath);
+                unlock_file(filename);
                 cout << connection->username << " downloaded " << request.content << endl;
             }
             catch (exception &e)

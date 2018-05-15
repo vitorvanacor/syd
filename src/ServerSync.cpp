@@ -28,10 +28,11 @@ void *ServerSync::run()
     connection->accept_connection();
     while (true)
     {
-
+        debug("RECEIVE SYNC",__FILE__,__LINE__,Color::BLUE);
         list<string> files_to_update = File::list_filename(connection->user_directory);
 
         Message msg = connection->receive(Message::T_SYNC);
+        debug("SYNC RECEIVED",__FILE__,__LINE__,Color::GREEN);
         bool receiving_stats = true;
         connection->send_ack();
 
@@ -60,8 +61,15 @@ void *ServerSync::run()
                 // Assign
                 int timestamp_remote = stoi(msg.content.substr(0, timestamp_len));
                 string filename = msg.content.substr(timestamp_len + 1, content_len);
-
                 string filepath = connection->user_directory + '/' + filename;
+
+                if (!can_be_transfered(filename))
+                {
+                    cout << filename << " currently being transfered" << endl;
+                    connection->send(Message::T_ERROR);
+                    connection->receive_ack();
+                    continue;
+                }
 
                 // Gets timestamp from the file stored at server
                 int timestamp_local = get_filetimestamp(filepath);
@@ -72,12 +80,6 @@ void *ServerSync::run()
                     cout << "Client needs to download" << endl;
                     try
                     {
-                        if (!ifstream(filepath))
-                        {
-                            cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
-                            connection->send(Message::T_ERROR);
-                            connection->receive_ack();
-                        }
                         connection->send(Message::T_DOWNLOAD);
                         connection->receive_ack();
 
@@ -94,6 +96,7 @@ void *ServerSync::run()
                     catch (exception &e)
                     {
                         cout << e.what() << endl;
+                        unlock_file(filename);
                         continue;
                     }
                 }
@@ -118,6 +121,7 @@ void *ServerSync::run()
 
                 // Update list of files that need update
                 files_to_update.remove(filename);
+                unlock_file(filename);
             }
             // Sync finished
             else if (msg.type == Message::T_DONE)
@@ -141,21 +145,27 @@ void *ServerSync::run()
                             if (!ifstream(filepath))
                             {
                                 cout << "Error opening file " << *it << " at " << connection->user_directory << endl;
-                                connection->send(Message::T_ERROR);
-                                connection->receive_ack();
+                                continue;
                             }
                             connection->send(Message::T_DOWNLOAD, filename);
-                            connection->receive_ack();
+                            bool ok = connection->receive_ack();
+                            if (ok)
+                            {
+                                int timestamp = get_filetimestamp(filepath);
 
-                            int timestamp = get_filetimestamp(filepath);
+                                connection->send(Message::T_SOF, to_string(timestamp));
+                                connection->receive_ack();
 
-                            connection->send(Message::T_SOF, to_string(timestamp));
-                            connection->receive_ack();
-
-                            if (connection->send_file(filepath) == 0)
-                                debug(*it + " downloaded successfully.");
+                                if (connection->send_file(filepath) == 0)
+                                    debug(*it + " downloaded successfully.");
+                                else
+                                    debug(*it + " download failed.");
+                            }
                             else
-                                debug(*it + " download failed.");
+                            {
+                                cout << "User cant receive " << filename << endl;
+                                connection->send_ack();
+                            }
                         }
                         catch (exception &e)
                         {
@@ -166,6 +176,7 @@ void *ServerSync::run()
 
                     connection->send(Message::T_DONE);
                     connection->receive_ack();
+                    debug("BREAK RECEIVE STAT", __FILE__,__LINE__,Color::RED);
                     break;
                 }
             }

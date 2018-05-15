@@ -15,6 +15,7 @@ class ServerSync : public Thread
     void *run();
 
     bool is_open;
+    list<string> files_in_transfer;
 
   private:
     Connection *connection;

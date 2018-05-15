@@ -68,10 +68,14 @@ int main(int argc, char *argv[])
                 }
 
                 connection->send(Message::T_UPLOAD, filename);
-                connection->receive_ack();
-
+                int ok = connection->receive_ack();
+                if (!ok)
+                {
+                    cout << "Wait, " << filename << " is currently in sync." << endl;
+                    connection->send_ack();
+                    continue;
+                }
                 int timestamp = get_filetimestamp(filepath);
-
                 connection->send(Message::T_SOF, to_string(timestamp));
                 connection->receive_ack();
 
@@ -93,7 +97,13 @@ int main(int argc, char *argv[])
         else if (command == "download")
         {
             connection->send(Message::T_DOWNLOAD, filename);
-            connection->receive_ack();
+            bool ok = connection->receive_ack();
+            if (!ok)
+            {
+                cout << "Wait, " << filename << " is currently in sync." << endl;
+                connection->send_ack();
+                continue;
+            }
             cout << "Downloading " << filename << "..." << endl;
             string filepath = connection->user_directory + '/' + filename;
             if (connection->receive_file(filepath) == 0)
@@ -110,7 +120,7 @@ int main(int argc, char *argv[])
         }
         else if (command == "list_client" || command == "lc")
         {
-            list_client(string(getenv("HOME")) + "/sync_dir_" + username);
+            list_client(HOME + "/sync_dir_" + username);
         }
         else if (command == "exit")
         {
