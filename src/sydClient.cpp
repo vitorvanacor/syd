@@ -104,9 +104,9 @@ int main(int argc, char *argv[])
                 continue;
             }
             cout << "Downloading " << filename << "..." << endl;
-            string filepath = connection->user_directory + '/' + filename;
+            string filepath = working_directory() + '/' + filename;
             if (connection->receive_file(filepath) == 0)
-                cout << filename << " downloaded successfully!" << endl;
+                cout << filename << " downloaded successfully into " << working_directory() << "!" << endl;
             else
                 cout << filename << " download failed!" << endl;
         }
