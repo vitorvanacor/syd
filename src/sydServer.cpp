@@ -8,6 +8,7 @@ class sydServer
     ~sydServer() {}
 
     map<string, ServerThread *> threads;
+    map<string, ServerThread *> sync_threads;
 
     void free_closed_threads()
     {
@@ -52,7 +53,7 @@ int main(int argc, char *argv[])
             if (!server->threads.count(msg.session)) // If session does not already exists
             {
                 Connection *connection = new Connection(msg.content, msg.session, listener.get_answerer());
-                ServerThread *new_thread = new ServerThread(connection);
+                ServerThread *new_thread = new ServerThread(connection, server->threads, server->sync_threads);
                 new_thread->start();
                 server->threads[msg.session] = new_thread;
             }

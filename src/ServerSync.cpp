@@ -1,7 +1,9 @@
 #include "ServerSync.hpp"
+#include "ServerThread.hpp"
 
-ServerSync::ServerSync(Connection *connection)
+ServerSync::ServerSync(Connection *connection, map<string, ServerThread *> sync_threads)
 {
+    sync_threads = sync_threads;
     string new_session;
     while (true)
     {
@@ -28,11 +30,11 @@ void *ServerSync::run()
     connection->accept_connection();
     while (true)
     {
-        debug("RECEIVE SYNC",__FILE__,__LINE__,Color::BLUE);
+        debug("RECEIVE SYNC", __FILE__, __LINE__, Color::BLUE);
         list<string> files_to_update = File::list_filename(connection->user_directory);
 
         Message msg = connection->receive(Message::T_SYNC);
-        debug("SYNC RECEIVED",__FILE__,__LINE__,Color::GREEN);
+        debug("SYNC RECEIVED", __FILE__, __LINE__, Color::GREEN);
         bool receiving_stats = true;
         connection->send_ack();
 
@@ -129,9 +131,9 @@ void *ServerSync::run()
                 if (files_to_update.size() == 0)
                 {
                     connection->send(Message::T_DONE);
-                    debug("WAITING LAST ACK", __FILE__,__LINE__,Color::MAGENTA);
+                    debug("WAITING LAST ACK", __FILE__, __LINE__, Color::MAGENTA);
                     connection->receive_ack();
-                    debug("RECEIVED LAST ACK", __FILE__,__LINE__,Color::RED);
+                    debug("RECEIVED LAST ACK", __FILE__, __LINE__, Color::RED);
                     break;
                 }
                 else
@@ -176,9 +178,9 @@ void *ServerSync::run()
                     }
 
                     connection->send(Message::T_DONE);
-                    debug("WAITING LAST ACK", __FILE__,__LINE__,Color::MAGENTA);
+                    debug("WAITING LAST ACK", __FILE__, __LINE__, Color::MAGENTA);
                     connection->receive_ack();
-                    debug("RECEIVED LAST ACK", __FILE__,__LINE__,Color::RED);
+                    debug("RECEIVED LAST ACK", __FILE__, __LINE__, Color::RED);
                     break;
                 }
             }
