@@ -1,32 +1,43 @@
 #include "ServerThread.hpp"
 #include "sydUtil.h"
 
-void free_closed_threads(map<string,ServerThread*> threads)
+class sydServer
 {
-    auto it = threads.cbegin();
-    while (it != threads.cend())
+  public:
+    sydServer() {}
+    ~sydServer() {}
+
+    map<string, ServerThread *> threads;
+
+    void free_closed_threads()
     {
-        if (!it->second->is_open)
+        auto it = threads.cbegin();
+        while (it != threads.cend())
         {
-            delete it->second;
-            it = threads.erase(it);
-        }
-        else
-        {
-            ++it;
+            if (!it->second->is_open)
+            {
+                delete it->second;
+                it = threads.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
         }
     }
-}
+};
 
 int main(int argc, char *argv[])
 {
+
+    sydServer *server = new sydServer();
+
     int port = DEFAULT_PORT;
     if (argc > 1)
     {
         port = atoi(argv[1]);
     }
 
-    map<string,ServerThread*> threads;
     Socket listener(port);
     listener.bind_server();
     cout << "Listening on port " << port << " for connections..." << endl;
@@ -34,16 +45,16 @@ int main(int argc, char *argv[])
     {
         debug("Waiting for connection", __FILE__, __LINE__, Color::RED);
         Message msg = Message::parse(listener.receive());
-        free_closed_threads(threads);
+        server->free_closed_threads();
         msg.print('<');
         if (msg.type == Message::T_SYN)
         {
-            if (!threads.count(msg.session)) // If session does not already exists
+            if (!server->threads.count(msg.session)) // If session does not already exists
             {
-                Connection* connection = new Connection(msg.content, msg.session, listener.get_answerer());
-                ServerThread* new_thread = new ServerThread(connection);
+                Connection *connection = new Connection(msg.content, msg.session, listener.get_answerer());
+                ServerThread *new_thread = new ServerThread(connection);
                 new_thread->start();
-                threads[msg.session] = new_thread;
+                server->threads[msg.session] = new_thread;
             }
             else
             {
