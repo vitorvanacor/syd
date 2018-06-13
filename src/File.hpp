@@ -5,13 +5,11 @@
 
 class File
 {
-  public:
-
-    static list<string> list_filename(string dirpath);
-    static void create_directory(string path);
-    unsigned int get_filesize(string filename);
-    static string list_directory(string dirpath);
-
+public:
+  static list<string> list_filename(string dirpath);
+  static void create_directory(string path);
+  static string list_directory(string dirpath);
+  static int delete_file(string filepath);
 };
 
 #endif

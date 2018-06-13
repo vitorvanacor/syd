@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <langinfo.h>
 #include <time.h>
+#include <stdio.h>
 
 void File::create_directory(string path)
 {
@@ -14,19 +15,9 @@ void File::create_directory(string path)
     }
 }
 
-unsigned int get_filesize(string filename)
-{
-    struct stat info;
-    if (stat(filename.c_str(), &info) != 0)
-    {
-        return 0;
-    }
-    return info.st_size;
-}
-
 list<string> File::list_filename(string dirpath)
 {
-    list <string> filenames;
+    list<string> filenames;
     DIR *dp;
     struct dirent *ep;
     dp = opendir(dirpath.c_str());
@@ -34,16 +25,35 @@ list<string> File::list_filename(string dirpath)
     {
         while ((ep = readdir(dp)))
         {
-            if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
-            {   
+            if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0)
+            {
                 filenames.push_back(ep->d_name);
             }
         }
-        (void) closedir (dp);
+        (void)closedir(dp);
     }
     else
         debug("Couldn't open the directory");
     return filenames;
+}
+
+int File::delete_file(string filepath)
+{
+    try
+    {
+        if (remove(filepath.c_str()) != 0)
+        {
+            return -1;
+        }
+        else
+        {
+            return 0;
+        }
+    }
+    catch (exception &e)
+    {
+        return -1;
+    }
 }
 
 string File::list_directory(string dirpath)
@@ -62,13 +72,13 @@ string File::list_directory(string dirpath)
     {
         files += "Name|Created At|Modified At|Last Accessed At|\n";
         while ((ep = readdir(dp)))
-        {       
-            if(strcmp(ep->d_name,".") != 0 && strcmp(ep->d_name,"..") != 0)
-            {   
+        {
+            if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0)
+            {
                 char fullpath[100];
-                strcpy(fullpath,dirpath.c_str());
-                strcat(fullpath,"/");
-                strcat(fullpath,ep->d_name);
+                strcpy(fullpath, dirpath.c_str());
+                strcat(fullpath, "/");
+                strcat(fullpath, ep->d_name);
 
                 if (stat(fullpath, &fileInfo) == -1)
                 {
@@ -92,11 +102,10 @@ string File::list_directory(string dirpath)
                 files += "|\n";
             }
         }
-        (void) closedir (dp);
+        (void)closedir(dp);
     }
     else
         debug("Couldn't open the directory");
-    
+
     return files;
 }
-

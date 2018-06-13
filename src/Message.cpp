@@ -16,6 +16,7 @@ const string Message::T_SYNC = "SYNC";
 const string Message::T_STAT = "STAT";
 const string Message::T_DONE = "DONE";
 const string Message::T_EQUAL = "EQAL";
+const string Message::T_DEL = "DEL";
 
 Message::Message(string session, int sequence, string type, string content = "")
 {
