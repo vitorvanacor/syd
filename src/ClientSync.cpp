@@ -26,18 +26,25 @@ ClientSync::~ClientSync()
 
 void *ClientSync::run()
 {
+
+    list<string> list_filename;
+    list<string> old_list_filename;
+
     while (true)
     {
-        debug("INIT SYNC",__FILE__,__LINE__,Color::GREEN);
+        debug("INIT SYNC", __FILE__, __LINE__, Color::GREEN);
         connection->send(Message::T_SYNC);
         connection->receive_ack();
 
-        list<string> list_filename = File::list_filename(connection->user_directory);
+        list_filename = File::list_filename(connection->user_directory);
 
         for (list<string>::iterator it = list_filename.begin(); it != list_filename.end(); ++it)
         {
             string filename = *it;
             string filepath = connection->user_directory + '/' + filename;
+
+            old_list_filename.remove(filename);
+
             if (can_be_transfered(filename))
             {
                 int timestamp = get_filetimestamp(filepath);
@@ -125,13 +132,24 @@ void *ClientSync::run()
                 unlock_file(filename);
             }
         }
-        connection->send(Message::T_DONE);
-        connection->receive_ack();
 
         list<string> expected_types;
         expected_types.push_back(Message::T_DONE);
         expected_types.push_back(Message::T_DOWNLOAD);
         expected_types.push_back(Message::T_ERROR);
+
+        if (old_list_filename.size() > 0)
+        {
+            for (list<string>::iterator it = old_list_filename.begin(); it != old_list_filename.end(); ++it)
+            {
+                string filename = *it;
+                connection->send(Message::T_DEL, filename);
+                connection->receive_ack();
+            }
+        }
+
+        connection->send(Message::T_DONE);
+        connection->receive_ack();
 
         // Receives for files that client doesn't have yet
         while (true)
@@ -176,7 +194,10 @@ void *ClientSync::run()
                 continue;
             }
         }
-        debug("SLEEPING for 5",__FILE__,__LINE__,Color::RED);
+
+        old_list_filename = File::list_filename(connection->user_directory);
+
+        debug("SLEEPING for 5", __FILE__, __LINE__, Color::RED);
         sleep(5);
     }
 }

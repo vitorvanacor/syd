@@ -41,6 +41,7 @@ void *ServerSync::run()
         list<string> expected_types;
         expected_types.push_back(Message::T_STAT);
         expected_types.push_back(Message::T_DONE);
+        expected_types.push_back(Message::T_DEL);
 
         while (receiving_stats)
         {
@@ -183,6 +184,18 @@ void *ServerSync::run()
                     debug("RECEIVED LAST ACK", __FILE__, __LINE__, Color::RED);
                     break;
                 }
+            }
+            else if (msg.type == Message::T_DEL)
+            {
+                string filename = msg.content;
+                string filepath = connection->user_directory + '/' + filename;
+                if (File::delete_file(filepath) == 0)
+                    cout << "File deleted successfully!" << endl;
+                else
+                    cout << "Delete file failed!" << endl;
+
+                files_to_update.remove(filename);
+                connection->send_ack();
             }
         }
     }
