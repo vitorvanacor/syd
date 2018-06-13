@@ -10,12 +10,12 @@ BUILDDIR := build
 
 # Project files
 ## Executables
-CLIENTEXE := bin/sydClient.exe
-SERVEREXE := bin/sydServer.exe
+CLIENTEXE := bin/syd
+SERVEREXE := bin/server
 ## Sources
-RAWCLIENTSRCS := sydClient.cpp ClientSync.cpp
+RAWCLIENTSRCS := Client.cpp ClientSync.cpp
 CLIENTSRCS = $(addprefix $(SRCDIR)/, $(RAWCLIENTSRCS))
-RAWSERVERSRCS := sydServer.cpp ServerThread.cpp ServerSync.cpp
+RAWSERVERSRCS := Server.cpp ServerThread.cpp ServerSync.cpp
 SERVERSRCS = $(addprefix $(SRCDIR)/, $(RAWSERVERSRCS))
 ## Sources used by both
 RAWSRCS = sydUtil.cpp Connection.cpp File.cpp Message.cpp Socket.cpp Thread.cpp

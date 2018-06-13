@@ -1,4 +1,4 @@
-#include "sydUtil.h"
+#include "Util.hpp"
 
 list<string> files_in_sync;
 pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -69,17 +69,7 @@ string get_filename(string filepath)
     return filepath.substr(last_slash_position + 1);
 }
 
-unsigned int get_filetimestamp(string filepath)
-{
-    struct stat result;
-    if (stat(filepath.c_str(), &result) == 0)
-    {
-        int mod_time = result.st_mtime;
-        return mod_time;
-    }
-    else
-        return -1;
-}
+
 
 string without_extension(string filename)
 {

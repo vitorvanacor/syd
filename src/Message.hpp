@@ -1,7 +1,7 @@
 #ifndef MESSAGE_H
 #define MESSAGE_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #define HEADER_SEPARATOR '|'
 
@@ -32,7 +32,7 @@ public:
   static const string T_UPLOAD;
   static const string T_BYE;
   static const string T_FILE;
-  static const string T_SOF;
+  static const string T_MODTIME;
   static const string T_EOF;
   static const string T_ERROR;
   static const string T_SYNC;

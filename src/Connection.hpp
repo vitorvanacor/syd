@@ -1,7 +1,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #include "Socket.hpp"
 #include "Message.hpp"
@@ -10,16 +10,15 @@
 class Connection
 {
 public:
-  Connection(string username, string session = "", Socket *new_socket = NULL);
+  Connection(string session = "", Socket *new_socket = NULL);
   ~Connection();
 
-  void connect();
+  void connect(string username);
   void accept_connection();
 
   void send(string type, string content = "");
-  void sendb(string stype, char *content = NULL);
   void send_ack(bool ok = true);
-  int send_file(string filepath);
+  void send_file(string filepath);
   void send_string(string data);
   void resend();
 
@@ -27,19 +26,15 @@ public:
   Message receive(list<string> expected_types);
   Message receive_request();
   bool receive_ack();
-  int receive_file(string filepath);
+  void receive_file(string filepath);
   string receive_string();
-  string list_server_dir(string dirpath);
 
-  static void *server_thread(void *void_this);
-
-  string username;
-  string user_directory;
   string session;
   Socket *sock;
 
 private:
-  Message receive();
+  void just_send(string type, string content = "");
+  Message just_receive();
   void init_sequences();
 
   map<int, string> messages_sent;

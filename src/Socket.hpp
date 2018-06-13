@@ -1,6 +1,6 @@
 #ifndef SOCKET_H
 #define SOCKET_H
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #define SOCKET_BUFFER_SIZE 1200
 #define PACKET_SIZE 1000

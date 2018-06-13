@@ -1,7 +1,7 @@
 #ifndef SERVERSYNC_H
 #define SERVERSYNC_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #include "Thread.hpp"
 #include "Socket.hpp"

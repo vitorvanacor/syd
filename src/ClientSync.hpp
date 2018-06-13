@@ -1,7 +1,7 @@
 #ifndef CLIENTSYNC_H
 #define CLIENTSYNC_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #include "Thread.hpp"
 #include "Socket.hpp"

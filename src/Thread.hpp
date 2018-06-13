@@ -1,7 +1,7 @@
 #ifndef THREAD_H
 #define THREAD_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 class Thread
 {
