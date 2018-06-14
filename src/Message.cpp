@@ -16,6 +16,9 @@ const string Message::T_SYNC = "SYNC";
 const string Message::T_STAT = "STAT";
 const string Message::T_DONE = "DONE";
 const string Message::T_EQUAL = "EQAL";
+const string Message::T_ELECTION = "ELEC";
+const string Message::T_ALIVE = "ALIV";
+const string Message::T_COORD = "COOR";
 
 Message::Message(string session, int sequence, string type, string content = "")
 {

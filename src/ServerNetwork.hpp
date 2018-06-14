@@ -12,6 +12,7 @@ class ServerThread : public Thread {
     void election_coordinator();
     string substring_compare();
 
+    string myIP;
     list<string> otherServers;
     map<string,Connection*> onlineServers;
 }
