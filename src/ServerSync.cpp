@@ -1,9 +1,9 @@
 #include "ServerSync.hpp"
 #include "ServerThread.hpp"
 
-ServerSync::ServerSync(Connection *connection, map<string, ServerThread *> sync_threads)
+ServerSync::ServerSync(Connection *connection, map<string, ServerSync *> *sync_threads_pointer)
 {
-    sync_threads = sync_threads;
+    sync_threads = sync_threads_pointer;
     string new_session;
     while (true)
     {
@@ -190,7 +190,19 @@ void *ServerSync::run()
                 string filename = msg.content;
                 string filepath = connection->user_directory + '/' + filename;
                 if (File::delete_file(filepath) == 0)
-                    cout << "File deleted successfully!" << endl;
+                {
+
+                    for (map<string, ServerSync *>::iterator it = (*sync_threads).begin(); it != (*sync_threads).end(); ++it)
+                    {
+                        ServerSync *thread = it->second;
+
+                        if (thread->connection->username != this->connection->username && thread->connection->session != this->connection->session)
+                        {
+                            thread->connection->send(Message::T_DEL, filename);
+                        }
+                    }
+                }
+
                 else
                     cout << "Delete file failed!" << endl;
 

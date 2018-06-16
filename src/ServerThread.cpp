@@ -1,12 +1,11 @@
 #include "ServerThread.hpp"
-
 #include "ServerSync.hpp"
 
-ServerThread::ServerThread(Connection *connection, map<string, ServerThread *> threads, map<string, ServerThread *> sync_threads)
+ServerThread::ServerThread(Connection *connection, map<string, ServerThread *> *threads_pointer, map<string, ServerSync *> *sync_threads_pointer)
 {
     is_open = true;
-    threads = threads;
-    sync_threads = sync_threads;
+    threads = threads_pointer;
+    sync_threads = sync_threads_pointer;
     this->connection = connection;
 }
 
@@ -19,6 +18,7 @@ void *ServerThread::run()
 {
     connection->accept_connection();
     ServerSync server_sync(connection, sync_threads);
+    (*sync_threads)[connection->session] = &server_sync;
     server_sync.start();
     cout << connection->username << " logged in" << endl;
     while (true)
