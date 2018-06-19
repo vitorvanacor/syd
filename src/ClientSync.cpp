@@ -13,7 +13,7 @@
 
 ClientSync::ClientSync(Connection *_connection)
 {
-    this->connection = new Connection(_connection->username);
+    this->connection = new Connection();
     this->connection->sock = _connection->sock->get_answerer();
     this->connection->connect();
     this->start();
@@ -28,7 +28,7 @@ void *ClientSync::run()
 {
     while (true)
     {
-        debug("INIT SYNC",__FILE__,__LINE__,Color::GREEN);
+        debug("INIT SYNC", __FILE__, __LINE__, Color::GREEN);
         connection->send(Message::T_SYNC);
         connection->receive_ack();
 
@@ -176,7 +176,7 @@ void *ClientSync::run()
                 continue;
             }
         }
-        debug("SLEEPING for 5",__FILE__,__LINE__,Color::RED);
+        debug("SLEEPING for 5", __FILE__, __LINE__, Color::RED);
         sleep(5);
     }
 }

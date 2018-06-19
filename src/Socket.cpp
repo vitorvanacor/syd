@@ -116,6 +116,11 @@ void Socket::set_dest_address(sockaddr_in new_dest_address)
 Socket* Socket::get_answerer()
 {
     Socket* answerer = new Socket(port);
-    answerer->dest_address = sender_address;
+    answerer->set_to_answer();
     return answerer;
+}
+
+void Socket::set_to_answer()
+{
+    dest_address = sender_address;
 }

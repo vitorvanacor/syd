@@ -17,8 +17,6 @@ class Client
     void list_client();
     void close_session();
 
-    void filelist_parser(string filelist);
-
     Connection *connection;
     string user_directory;
 }

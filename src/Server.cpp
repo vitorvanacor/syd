@@ -24,7 +24,7 @@ void Server::receive_connection(Socket listener)
             if (!threads.count(msg.session)) // If session does not already exists
             {
                 Connection *connection = new Connection(msg.session, listener.get_answerer());
-                ServerThread *new_thread = new ServerThread(connection, msg.content);
+                ServerThread *new_thread = new ServerThread(connection);
                 new_thread->start();
                 threads[msg.session] = new_thread;
             }

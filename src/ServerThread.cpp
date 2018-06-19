@@ -2,11 +2,10 @@
 
 #include "ServerSync.hpp"
 
-ServerThread::ServerThread(Connection *connection, string username)
+ServerThread::ServerThread(Connection *connection)
 {
     is_open = true;
     this->connection = connection;
-    this->username = username;
 }
 
 ServerThread::~ServerThread()
@@ -16,7 +15,8 @@ ServerThread::~ServerThread()
 
 void *ServerThread::run()
 {
-    connection->accept_connection();
+    connection->confirm_new_connection();
+    username = connection->receive_content(Message::Type::LOGIN);
     File::create_directory(username);
 
     ServerSync server_sync(connection);
@@ -35,89 +35,82 @@ void ServerThread::mainloop()
     {
         Message request = connection->receive_request();
 
-        if (request.type == Message::T_UPLOAD)
+        if (request.type == Message::Type::UPLOAD)
         {
             receive_file(request.content);
         }
-        else if (request.type == Message::T_DOWNLOAD)
+        else if (request.type == Message::Type::DOWNLOAD)
         {
             send_file(request.content);
         }
-        else if (request.type == Message::T_LS)
+        else if (request.type == Message::Type::LIST_SERVER)
         {
             list_server();
         }
-        else if (request.type == Message::T_BYE)
+        else if (request.type == Message::Type::BYE)
         {
             close_session();
             break;
         }
     }
-    cout << "User " << connection->username << " logged out." << endl;
+    cout << "User " << username << " logged out." << endl;
     is_open = false;
 }
 
 void ServerThread::receive_file(string filename)
 {
     string filepath = username + '/' + filename;
-    if (!can_be_transfered(filename))
+    if (can_be_transfered(filename))
     {
-        cout << "Error: File " << filename << " already being transfered" << endl;
+        connection->send_ack();
+        cout << username << " is uploading " << filename << "..." << endl;
+        connection->receive_file(filepath);
+        unlock_file(filename);
+        cout << username << " uploaded " << filename << endl;
+    }
+    else
+    {
+        cout << "Error: File " << filename << " currently syncing" << endl;
         connection->send_ack(false);
-        connection->receive_ack();
         return;
     }
-    connection->send_ack();
-    cout << username << " is uploading " << filename << "..." << endl;
-    connection->receive_file(filepath);
-    unlock_file(filename);
-    cout << username << " uploaded " << filename << endl;
 }
 
 void ServerThread::send_file(string filename)
 {
     string filepath = username + '/' + filename;
-    if (!can_be_transfered(filename))
+    File file(filepath);
+    if (!file.exists())
     {
-        cout << "Error: File " << filename << " already being transfered" << endl;
+        cout << "Error opening file " << filename << " at " << username << endl;
         connection->send_ack(false);
-        connection->receive_ack();
         return;
     }
-    connection->send_ack();
-    try
+    if (can_be_transfered(filename))
     {
-        File file(filepath);
-        if (!file.exists())
-        {
-            cout << "Error opening file " << filename << " at " << username << endl;
-            connection->send_ack(false);
-            connection->receive_ack();
-            unlock_file(filename);
-            return;
-        }
-
-        connection->send(Message::T_MODTIME, to_string(file.modification_time()));
-        connection->receive_ack();
+        connection->send_ack();
+        connection->send(Message::Type::MODTIME, to_string(file.modification_time()));
 
         cout << username << " is downloading " << filename << "..." << endl;
         connection->send_file(filepath);
-        unlock_file(filename);
         cout << username << " downloaded " << filename << endl;
-    }
-    catch (exception &e)
-    {
-        connection->send_ack(false);
-        connection->receive_ack();
-
-        cout << e.what() << endl;
         unlock_file(filename);
+        }
+    else
+    {
+        cout << "Error: File " << filename << " already being transfered" << endl;
+        connection->send_ack(false);
         return;
     }
-    unlock_file(filename);
 }
 
 void ServerThread::list_server()
 {
-    connection->send_string(File::list_directory(username));
+    connection->send_long_content(Message::Type::LIST_SERVER, File::list_directory(username));
+}
+
+void ServerThread::close_session()
+{
+    connection->send_ack();
+    connection->receive_ack();
 }

@@ -10,7 +10,7 @@
 class ServerThread : public Thread
 {
   public:
-    ServerThread(Connection *connection, string username);
+    ServerThread(Connection *connection);
     ~ServerThread();
     void *run();
 

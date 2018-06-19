@@ -8,37 +8,42 @@
 class Message
 {
 public:
-  Message(string session, int sequence, string type, string content);
+  enum Type
+  {
+    SYN,
+    ACK,
+    LOGIN,
+    LIST_SERVER,
+    DOWNLOAD,
+    UPLOAD,
+    BYE,
+    END,
+    FILE,
+    MODTIME,
+    END_OF_FILE,
+    ERROR,
+    SYNC,
+    STAT,
+    DONE,
+    EQUAL
+  };
 
-  string to_string();
+  Message(string session, int sequence, Message::Type type, string content);
+
+  string stringify();
   void print(char direction = '\0', string username = "");
   bool is_request();
 
   static Message parse(string msg);
-  static Message parseb(char *msg);
 
-  string type;
+  Message::Type type;
   string session;
   int sequence;
   string content;
 
   static const string MSG_SEPARATOR;
-  static const string MSG_END;
 
-  static const string T_SYN;
-  static const string T_ACK;
-  static const string T_LS;
-  static const string T_DOWNLOAD;
-  static const string T_UPLOAD;
-  static const string T_BYE;
-  static const string T_FILE;
-  static const string T_MODTIME;
-  static const string T_EOF;
-  static const string T_ERROR;
-  static const string T_SYNC;
-  static const string T_STAT;
-  static const string T_DONE;
-  static const string T_EQUAL;
+  static string str(Message::Type t);
 };
 
 #endif

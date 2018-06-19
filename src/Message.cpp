@@ -2,22 +2,7 @@
 
 const string Message::MSG_SEPARATOR = "|";
 
-const string Message::T_SYN = "SYN";
-const string Message::T_ACK = "ACK";
-const string Message::T_LS = "LS";
-const string Message::T_DOWNLOAD = "DOWN";
-const string Message::T_UPLOAD = "UP";
-const string Message::T_BYE = "BYE";
-const string Message::T_FILE = "FILE";
-const string Message::T_MODTIME = "MODT";
-const string Message::T_EOF = "EOF";
-const string Message::T_ERROR = "ERRO";
-const string Message::T_SYNC = "SYNC";
-const string Message::T_STAT = "STAT";
-const string Message::T_DONE = "DONE";
-const string Message::T_EQUAL = "EQAL";
-
-Message::Message(string session, int sequence, string type, string content = "")
+Message::Message(string session, int sequence, Message::Type type, string content = "")
 {
     this->session = session;
     this->sequence = sequence;
@@ -25,14 +10,14 @@ Message::Message(string session, int sequence, string type, string content = "")
     this->content = content;
 }
 
-string Message::to_string()
+string Message::stringify()
 {
     string msg = "";
     msg += session;
     msg += Message::MSG_SEPARATOR;
-    msg += std::to_string(sequence);
+    msg += to_string(sequence);
     msg += Message::MSG_SEPARATOR;
-    msg += type;
+    msg += to_string(static_cast<int>(type));
     msg += Message::MSG_SEPARATOR;
     msg += content;
     msg += Message::MSG_SEPARATOR;
@@ -41,7 +26,16 @@ string Message::to_string()
 
 bool Message::is_request()
 {
-    return (type == Message::T_LS || type == Message::T_DOWNLOAD || type == Message::T_UPLOAD || type == Message::T_BYE);
+    switch (type)
+    {
+    case LIST_SERVER:
+    case DOWNLOAD:
+    case UPLOAD:
+    case BYE:
+        return true;
+    default:
+        return false;
+    }
 }
 
 void Message::print(char direction, string username)
@@ -55,8 +49,8 @@ void Message::print(char direction, string username)
         debug("<===");
     }
     debug("|  Session  |  " + session + " " + username);
-    debug("|  Sequence |  " + std::to_string(sequence));
-    debug("|  Type     |  " + type);
+    debug("|  Sequence |  " + to_string(sequence));
+    debug("|  Type     |  " + str(type));
     if (!content.empty())
     {
         debug("|  Content  |  " + content);
@@ -80,8 +74,45 @@ Message Message::parse(string msg)
     // Assign
     string session = msg.substr(0, session_len);
     string sequence = msg.substr(session_sep + 1, sequence_len);
-    string type = msg.substr(sequence_sep + 1, type_len);
+    Message::Type type = static_cast<Message::Type>(stoi(msg.substr(sequence_sep + 1, type_len)));
     string content = msg.substr(type_sep + 1, content_len);
 
     return Message(session, stoi(sequence), type, content);
+}
+
+string Message::str(Message::Type type)
+{
+    switch (type)
+    {
+    case SYN:
+        return "SYN";
+    case ACK:
+        return "ACK";
+    case LOGIN:
+        return "LOGIN";
+    case LIST_SERVER:
+        return "LIST_SERVER";
+    case DOWNLOAD:
+        return "DOWNLOAD";
+    case UPLOAD:
+        return "UPLOAD";
+    case BYE:
+        return "BYE";
+    case FILE:
+        return "FILE";
+    case MODTIME:
+        return "MODTIME";
+    case END_OF_FILE:
+        return "END_OF_FILE";
+    case ERROR:
+        return "ERROR";
+    case SYNC:
+        return "SYNC";
+    case STAT:
+        return "STAT";
+    case DONE:
+        return "DONE";
+    case EQUAL:
+        return "EQUAL";
+    }
 }

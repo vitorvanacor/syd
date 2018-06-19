@@ -19,10 +19,17 @@ Connection::~Connection()
     delete this->sock;
 }
 
-void Connection::connect(string username)
+void Connection::connect_to_host(string hostname, int port)
 {
-    send(Message::T_SYN, username);
-    sock->set_dest_address(sock->get_sender_address());
+    sock = new Socket(port);
+    sock->set_host(hostname);
+    connect();
+}
+
+void Connection::connect()
+{
+    send(Message::Type::SYN);
+    sock->set_to_answer();
     send_ack();
 }
 
@@ -33,22 +40,22 @@ void Connection::accept_connection()
     receive_ack();
 }
 
-void Connection::just_send(string type, string content)
+void Connection::just_send(Message::Type type, string content)
 {
     last_sequence_sent += 1;
     Message msg = Message(session, last_sequence_sent, type, content);
     msg.print('>');
-    sock->send(msg.to_string());
-    messages_sent[last_sequence_sent] = msg.to_string();
+    sock->send(msg.stringify());
+    messages_sent[last_sequence_sent] = msg.stringify();
 }
 
-void Connection::send(string type, string content)
+bool Connection::send(Message::Type type, string content)
 {
     just_send(type, content);
-    receive_ack();
+    return receive_ack();
 }
 
-void Connection::send_string(string type, string content)
+void Connection::send_long_content(Message::Type type, string content)
 {
     string buffer;
     int start = 0;
@@ -60,31 +67,33 @@ void Connection::send_string(string type, string content)
         start += len;
         len = content_space(type);
     } while (start < content.length());
-    send(Message::T_END);
+    send(Message::Type::END);
 }
 
 void Connection::send_ack(bool ok)
 {
     if (ok)
     {
-        just_send(Message::T_ACK, to_string(last_sequence_received));
+        just_send(Message::Type::ACK, to_string(last_sequence_received));
     }
     else
     {
-        just_send(Message::T_ERROR, to_string(last_sequence_received));
+        just_send(Message::Type::ERROR, to_string(last_sequence_received));
     }
 }
 
-int Connection::send_file(string filepath)
+int Connection::send_file(File file)
 {
-    ifstream file(filepath, std::ifstream::binary);
-    const char buffer[content_space(Message::T_FILE)];
+    send(Message::Type::MODTIME, to_string(file.modification_time())); // throw SendFail, Response
+
+    ifstream file_stream(file.filepath, std::ifstream::binary);
+    const char buffer[content_space(Message::Type::FILE)];
     do
     {
-        file.read(buffer, content_space(Message::T_FILE));
-        send(Message::T_FILE, string(buffer, file.gcount()));
-    } while (!file.eof());
-    send(Message::T_EOF);
+        file_stream.read(buffer, content_space(Message::Type::FILE));
+        send(Message::Type::FILE, string(buffer, file_stream.gcount()));
+    } while (!file_stream.eof());
+    send(Message::Type::END_OF_FILE);
     return 0;
 }
 
@@ -158,7 +167,7 @@ bool Connection::receive_ack()
     }
 }
 
-Message Connection::receive(string expected_type)
+Message Connection::receive(Message::Type expected_type)
 {
     debug("Waiting for " + expected_type + "...", __FILE__);
     while (true)
@@ -171,6 +180,12 @@ Message Connection::receive(string expected_type)
             return msg;
         }
     }
+}
+
+string Connection::receive_content(Message::Type expected_type)
+{
+    Message msg = receive(expected_type);
+    return msg.content;
 }
 
 Message Connection::receive(list<string> expected_types)
@@ -206,11 +221,27 @@ Message Connection::receive_request()
     }
 }
 
-string Connection::receive_string()
+Connection *Connection::receive_connection()
+{
+    string new_session;
+    sock->set_timeout(0); // Never timeout
+    while (true)
+    {
+        string msg_s = sock->receive();
+        Message msg = Message::parse(msg_s);
+        if (msg.type == Message::Type::SYN && msg.session != session)
+        {
+            sock->set_timeout(Socket::DEFAULT_TIMEOUT);
+            return new Connection(msg.session, sock->get_answerer());
+        }
+    }
+}
+
+string Connection::receive_long_message()
 {
     string received_string;
 
-    while(true)
+    while (true)
     {
         Message msg = just_receive();
         {

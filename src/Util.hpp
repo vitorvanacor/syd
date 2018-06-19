@@ -6,12 +6,15 @@
 #include <netdb.h> // hostent
 #include <pthread.h>
 #include <string.h> // bzero
+#include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h> // close
 
 //C++ headers
+#include <algorithm>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <list>
 #include <map>
@@ -33,9 +36,8 @@ void unlock_file(string fil);
 
 void debug(string msg, const char *file = NULL, int line = 0, int color = 0);
 string get_filename(string filepath);
-unsigned int get_filetimestamp(string filename);
 string without_extension(string filename);
-string working_directory();
+string time_to_string(time_t timestamp);
 
 enum Color
 {
