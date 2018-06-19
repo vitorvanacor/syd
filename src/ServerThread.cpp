@@ -15,12 +15,13 @@ ServerThread::~ServerThread()
 
 void *ServerThread::run()
 {
-    connection->confirm_new_connection();
+    connection->confirm();
     username = connection->receive_content(Message::Type::LOGIN);
+    connection->send_ack();
     File::create_directory(username);
 
-    ServerSync server_sync(connection);
-    server_sync.start();
+    ServerSync* server_sync = new ServerSync(this);
+    //server_sync->start();
 
     cout << username << " logged in" << endl;
 
@@ -57,12 +58,15 @@ void ServerThread::mainloop()
     is_open = false;
 }
 
-void ServerThread::receive_file(string filename)
+void ServerThread::receive_file(string filename, Connection* connection)
 {
+    if (!connection)
+    {
+        connection = this->connection;
+    }
     string filepath = username + '/' + filename;
     if (can_be_transfered(filename))
     {
-        connection->send_ack();
         cout << username << " is uploading " << filename << "..." << endl;
         connection->receive_file(filepath);
         unlock_file(filename);
@@ -76,8 +80,12 @@ void ServerThread::receive_file(string filename)
     }
 }
 
-void ServerThread::send_file(string filename)
+void ServerThread::send_file(string filename, Connection* connection)
 {
+    if (!connection)
+    {
+        connection = this->connection;
+    }
     string filepath = username + '/' + filename;
     File file(filepath);
     if (!file.exists())
@@ -95,7 +103,7 @@ void ServerThread::send_file(string filename)
         connection->send_file(filepath);
         cout << username << " downloaded " << filename << endl;
         unlock_file(filename);
-        }
+    }
     else
     {
         cout << "Error: File " << filename << " already being transfered" << endl;
@@ -106,7 +114,8 @@ void ServerThread::send_file(string filename)
 
 void ServerThread::list_server()
 {
-    connection->send_long_content(Message::Type::LIST_SERVER, File::list_directory(username));
+    string list_dir_str = File::list_directory_str(username);
+    connection->send_long_content(Message::Type::LIST_SERVER, list_dir_str);
 }
 
 void ServerThread::close_session()

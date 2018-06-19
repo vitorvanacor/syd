@@ -27,10 +27,11 @@ void Client::start(string username, string hostname, int port)
     connection->connect_to_host(hostname, port);
     connection->send(Message::Type::LOGIN, username);
 
-    user_directory = HOME + "/sync_dir_" + username;
-    File::create_directory(user_directory);
+    user_dir = HOME + "/sync_dir_" + username;
+    File::create_directory(user_dir);
 
-    ClientSync client_sync(connection);
+    ClientSync* client_sync = new ClientSync(this);
+    //client_sync->start();
     cout << "Successfully logged in as " << username << "!" << endl;
 
     mainloop();
@@ -75,21 +76,31 @@ void Client::mainloop()
     }
 }
 
-void Client::upload_file(string filename)
+void Client::upload_file(string filename, string dirpath, Connection* connection)
 {
-    File file(filename);
+    if (!connection)
+    {
+        connection = this->connection;
+    }
     connection->send(Message::Type::UPLOAD, filename); // throw FileNotFound, SendFail, Response
     cout << "Uploading " << filename << "..." << endl;
     connection->send_file(filename); // throw SendFail
     cout << filename << " uploaded successfully!";
 }
 
-void Client::download_file(string filename)
+void Client::download_file(string filename, string dirpath, Connection* connection)
 {
+    if (dirpath.empty())
+    {
+        dirpath = File::working_directory();
+    }
+    if (!connection)
+    {
+        connection = this->connection;
+    }
     connection->send(Message::Type::DOWNLOAD, filename); // throw SendFail, Response
     cout << "Downloading " << filename << " to " << File::working_directory() << "..." << endl;
-    string filepath = File::working_directory() + "/" + filename;
-    connection->receive_file(filepath);
+    connection->receive_file(dirpath + "/" + filename);
     cout << filename << " downloaded successfully!" << endl;
 }
 
@@ -102,7 +113,7 @@ void Client::list_server()
 
 void Client::list_client()
 {
-    string file_list = File::list_directory(user_directory);
+    string file_list = File::list_directory_str(user_dir);
     File::print_file_list(file_list);
 }
 

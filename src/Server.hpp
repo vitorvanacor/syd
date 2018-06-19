@@ -15,6 +15,6 @@ class Server
     void delete_closed_threads();
 
     map<string, ServerThread *> threads;
-}
+};
 
 #endif

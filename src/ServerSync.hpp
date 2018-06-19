@@ -3,14 +3,14 @@
 
 #include "Util.hpp"
 
-#include "Thread.hpp"
+#include "ServerThread.hpp"
 #include "Socket.hpp"
 #include "Connection.hpp"
 
 class ServerSync : public Thread
 {
   public:
-    ServerSync(Connection *connection);
+    ServerSync(ServerThread* server);
     ~ServerSync();
     void *run();
 
@@ -19,6 +19,7 @@ class ServerSync : public Thread
 
   private:
     Connection *connection;
+    ServerThread* server;
 };
 
 #endif

@@ -15,16 +15,15 @@ class ServerThread : public Thread
     void *run();
 
     void mainloop();
-    void receive_file(string filename);
-    void send_file(string filename);
+    void receive_file(string filename, Connection* connection = NULL);
+    void send_file(string filename, Connection* connection = NULL);
     void list_server();
     void close_session();
 
     bool is_open;
-
-  private:
-    Connection *connection;
     string username;
+    Connection *connection;
+    
 };
 
 #endif

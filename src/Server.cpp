@@ -2,32 +2,18 @@
 
 void Server::start(int port)
 {
-    Socket listener(port);
-    listener.bind_server();
+    Connection *listener = Connection::listener(port);
     cout << "Listening on port " << port << " for connections..." << endl;
     while (true)
     {
-        receive_connection(listener);
-    }
-}
-
-void Server::receive_connection(Socket listener)
-{
-    while(true)
-    {
         debug("Waiting for connection", __FILE__, __LINE__, Color::RED);
-        Message msg = Message::parse(listener.receive());
+        Connection *connection = listener->receive_connection();
         delete_closed_threads();
-        msg.print('<');
-        if (msg.type == Message::T_SYN)
+        if (!threads.count(connection->session)) // If session doesn't exist
         {
-            if (!threads.count(msg.session)) // If session does not already exists
-            {
-                Connection *connection = new Connection(msg.session, listener.get_answerer());
-                ServerThread *new_thread = new ServerThread(connection);
-                new_thread->start();
-                threads[msg.session] = new_thread;
-            }
+            ServerThread *new_thread = new ServerThread(connection);
+            new_thread->start();
+            threads[connection->session] = new_thread;
         }
     }
 }

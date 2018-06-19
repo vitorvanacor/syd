@@ -15,14 +15,14 @@ class Socket
     void set_host(string hostname);
 
     void send(string msg);
-    void sendb(char *content);
     string receive();
 
     void set_timeout(int seconds);
-    sockaddr_in get_sender_address();
-    void set_dest_address(sockaddr_in new_dest_address);
+    void enable_timeout();
+    void disable_timeout();
+
     Socket* get_answerer();
-    void set_to_answer();
+    void set_to_answer(Socket* sock);
 
     static int DEFAULT_TIMEOUT;
 
@@ -39,6 +39,7 @@ class Socket
     const char *send_buffer;
 
     struct timeval timeout;
+    struct timeval zero_timeout;
     socklen_t socklen;
 };
 

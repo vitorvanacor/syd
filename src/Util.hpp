@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <unistd.h> // close
+#include <utime.h>
 
 //C++ headers
 #include <algorithm>
@@ -18,6 +19,7 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <sstream>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -31,12 +33,20 @@ using namespace std;
 
 static const string HOME = string(getenv("HOME"));
 
+/* MUTEX */
 bool can_be_transfered(string filename);
 void unlock_file(string fil);
 
+/* TABLE */
+void print_table(string table);
+
+/* DEBUG */
 void debug(string msg, const char *file = NULL, int line = 0, int color = 0);
 string get_filename(string filepath);
 string without_extension(string filename);
+
+/* UTIL */
+bool contains(list<string> string_list, string value);
 string time_to_string(time_t timestamp);
 
 enum Color

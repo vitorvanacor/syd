@@ -18,7 +18,7 @@ CLIENTSRCS = $(addprefix $(SRCDIR)/, $(RAWCLIENTSRCS))
 RAWSERVERSRCS := Server.cpp ServerThread.cpp ServerSync.cpp
 SERVERSRCS = $(addprefix $(SRCDIR)/, $(RAWSERVERSRCS))
 ## Sources used by both
-RAWSRCS = sydUtil.cpp Connection.cpp File.cpp Message.cpp Socket.cpp Thread.cpp
+RAWSRCS = Util.cpp Connection.cpp File.cpp Message.cpp Socket.cpp Thread.cpp
 SRCS = $(addprefix $(SRCDIR)/, $(RAWSRCS))
 ## Object files
 RAWCLIENTOBJS := $(RAWCLIENTSRCS:%.cpp=%.o)

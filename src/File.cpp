@@ -7,29 +7,34 @@
 #include <time.h>
 
 File::File(string filepath)
-    : filepath(filepath)
-    , modification_time_str("")
-    , access_time_str("")
-    , creation_time_str("")
+    : filepath(filepath), modification_time_str(""), access_time_str(""), creation_time_str("")
+{
+    update_info();
+}
+
+bool File::update_info()
 {
     if (stat(filepath.c_str(), &info) >= 0)
     {
         modification_time_str = time_to_string(info.st_mtime);
         access_time_str = time_to_string(info.st_atime);
         creation_time_str = time_to_string(info.st_ctime);
-    }
-}
-
-bool File::exists()
-{
-    if (ifstream(filepath))
-    {
         return true;
     }
     else
     {
         return false;
     }
+}
+
+string File::name()
+{
+    return get_filename(filepath);
+}
+
+bool File::exists()
+{
+    return stat(filepath.c_str(), &info) == 0;
 }
 
 void File::create_directory(string path)
@@ -48,7 +53,28 @@ unsigned int File::size()
 
 unsigned int File::modification_time()
 {
-    return info.st_mtime;
+    if (update_info())
+    {
+        return info.st_mtime;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+void File::set_modification_time(int modtime)
+{
+    struct utimbuf ubuf;
+    ubuf.modtime = modtime;
+    if (utime(filepath.c_str(), &ubuf) == 0)
+    {
+        update_info();
+    }
+    else
+    {
+        perror("utime() error");
+    }
 }
 
 string File::stringify()
@@ -62,28 +88,40 @@ string File::stringify()
     file_str += "|";
     file_str += access_time_str;
     file_str += "|";
+    return file_str;
 }
 
-string File::list_directory(string dirpath)
+list<File> File::list_directory(string dirpath)
 {
-    list<string> file_list;
+    list<File> file_list;
     DIR *directory;
     struct dirent *dir_entry;
     directory = opendir(dirpath.c_str());
     if (directory)
     {
-        while (dir_entry = readdir(directory))
+        while ((dir_entry = readdir(directory)))
         {
             string filename = string(dir_entry->d_name);
             if (filename != "." && filename != "..")
             {
                 File file(filename);
-                file_list += file.stringify() + "\n";
+                file_list.push_back(file);
             }
         }
     }
     closedir(directory);
     return file_list;
+}
+
+string File::list_directory_str(string dirpath)
+{
+    string list_dir_str = "";
+    list<File> list_dir = File::list_directory(dirpath);
+    for (File &file : list_dir)
+    {
+        list_dir_str += file.stringify();
+    }
+    return list_dir_str;
 }
 
 void File::print_file_list(string file_list)
@@ -95,75 +133,6 @@ void File::print_file_list(string file_list)
 string File::working_directory()
 {
     return string(getenv("PWD"));
-}
-
-string File::list_directory(string dirpath)
-{
-    DIR *dp;
-    struct dirent *ep;
-    struct stat fileInfo;
-    string files = "";
-    struct tm *tm;
-    char mod_time[256] = {0};
-    char create_time[256] = {0};
-    char last_time[256] = {0};
-
-    dp = opendir(dirpath.c_str());
-    if (dp != NULL)
-    {
-        files += "Name|Created At|Modified At|Last Accessed At|\n";
-        while ((ep = readdir(dp)))
-        {
-            if (strcmp(ep->d_name, ".") != 0 && strcmp(ep->d_name, "..") != 0)
-            {
-                char fullpath[100];
-                strcpy(fullpath, dirpath.c_str());
-                strcat(fullpath, "/");
-                strcat(fullpath, ep->d_name);
-
-                if (stat(fullpath, &fileInfo) == -1)
-                {
-                    perror(0);
-                    continue;
-                }
-                tm = localtime(&fileInfo.st_mtime);
-                strftime(mod_time, sizeof(mod_time), "%H:%M:%S %d/%m/%Y", tm);
-                tm = localtime(&fileInfo.st_ctime);
-                strftime(create_time, sizeof(create_time), "%H:%M:%S %d/%m/%Y", tm);
-                tm = localtime(&fileInfo.st_atime);
-                strftime(last_time, sizeof(last_time), "%H:%M:%S %d/%m/%Y", tm);
-
-                files += ep->d_name;
-                files += "| ";
-                files += create_time;
-                files += "| ";
-                files += mod_time;
-                files += "| ";
-                files += last_time;
-                files += "|\n";
-            }
-        }
-        (void)closedir(dp);
-    }
-    else
-    {
-        debug("Couldn't open the directory");
-    }
-
-    return files;
-}
-
-list<File> File::parse_file_list(string msg)
-{
-    string delimiter = "|";
-    string token;
-    int pos = 0;
-    while ((pos = filelist.find(delimiter)) != std::string::npos)
-    {
-        token = filelist.substr(0, pos);
-        printElement(token, fieldWidth, separator);
-        filelist.erase(0, pos + delimiter.length());
-    }
 }
 
 File File::parse_file(string file_str)
@@ -192,4 +161,3 @@ File File::parse_file(string file_str)
     file.access_time_str = access_time;
     return file;
 }
-

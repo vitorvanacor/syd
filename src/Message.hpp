@@ -32,8 +32,10 @@ public:
 
   string stringify();
   void print(char direction = '\0', string username = "");
-  bool is_request();
 
+  static list<Message::Type> type_request();
+  static list<Message::Type> type_sync();
+  static list<Message::Type> type_action();
   static Message parse(string msg);
 
   Message::Type type;

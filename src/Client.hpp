@@ -3,22 +3,25 @@
 
 #include "Util.hpp"
 
+#include "Connection.hpp"
+
 class Client
 {
   public:
     ~Client();
     void start(string username, string hostname, int port);
+    void upload_file(string filename, string dirpath = "", Connection* connection = NULL);
+    void download_file(string filename, string dirpath = "", Connection* connection = NULL);
+
+    Connection *connection;
+    string user_dir;
 
   private:
     void mainloop();
-    void upload_file(string filename);
-    void download_file(string filename);
+    
     void list_server();
     void list_client();
     void close_session();
-
-    Connection *connection;
-    string user_directory;
-}
+};
 
 #endif

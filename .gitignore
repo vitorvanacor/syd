@@ -1,6 +1,7 @@
 # Ignore object and executable files
 *.o
-*.exe
+bin/syd
+bin/server
 
 # IDE files
 .vscode

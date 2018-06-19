@@ -1,7 +1,5 @@
 #include "Connection.hpp"
 
-#include <utime.h>
-
 Connection::Connection(string session, Socket *sock)
 {
     this->session = session;
@@ -11,6 +9,13 @@ Connection::Connection(string session, Socket *sock)
     }
     this->sock = sock;
     init_sequences();
+}
+
+Connection *Connection::listener(int port)
+{
+    Connection *connection = new Connection("0", new Socket(port));
+    connection->sock->bind_server();
+    return connection;
 }
 
 Connection::~Connection()
@@ -28,15 +33,15 @@ void Connection::connect_to_host(string hostname, int port)
 
 void Connection::connect()
 {
-    send(Message::Type::SYN);
-    sock->set_to_answer();
-    send_ack();
+    send(Message::Type::SYN); // SYN (1/3)
+    sock->set_to_answer(sock);
+    send_ack(); // ACK (3/3)
 }
 
-void Connection::accept_connection()
+void Connection::confirm()
 {
     last_sequence_received = 0;
-    send_ack(); // SYN ACK
+    send_ack(); // SYN+ACK (2/3)
     receive_ack();
 }
 
@@ -66,7 +71,7 @@ void Connection::send_long_content(Message::Type type, string content)
         send(type, buffer);
         start += len;
         len = content_space(type);
-    } while (start < content.length());
+    } while (start < (int)content.length());
     send(Message::Type::END);
 }
 
@@ -82,19 +87,21 @@ void Connection::send_ack(bool ok)
     }
 }
 
-int Connection::send_file(File file)
+void Connection::send_file(string filename)
 {
-    send(Message::Type::MODTIME, to_string(file.modification_time())); // throw SendFail, Response
+    File file(filename);
+    string modtime = to_string(file.modification_time()); // throw FileNotFound
+    send(Message::Type::MODTIME, modtime);                // throw SendFail, Response
 
-    ifstream file_stream(file.filepath, std::ifstream::binary);
-    const char buffer[content_space(Message::Type::FILE)];
+    ifstream file_stream(file.filepath, ifstream::binary);
+    int content_len = content_space(Message::Type::FILE);
+    char *buffer = new char[content_len];
     do
     {
-        file_stream.read(buffer, content_space(Message::Type::FILE));
+        file_stream.read(buffer, content_len);
         send(Message::Type::FILE, string(buffer, file_stream.gcount()));
     } while (!file_stream.eof());
     send(Message::Type::END_OF_FILE);
-    return 0;
 }
 
 void Connection::resend()
@@ -102,7 +109,7 @@ void Connection::resend()
     for (auto it = messages_sent.begin(); it != messages_sent.end(); ++it)
     {
         debug("Resending message " + to_string(it->first), __FILE__);
-        sock->just_send(string(it->second));
+        sock->send(string(it->second));
     }
 }
 
@@ -150,13 +157,13 @@ bool Connection::receive_ack()
         {
             if (stoi(msg.content) == last_sequence_sent)
             {
-                if (msg.type == Message::T_ACK)
+                if (msg.type == Message::Type::ACK)
                 {
                     last_sequence_received = msg.sequence;
                     messages_sent.clear();
                     return true;
                 }
-                else if (msg.type == Message::T_ERROR)
+                else if (msg.type == Message::Type::ERROR)
                 {
                     last_sequence_received = msg.sequence;
                     messages_sent.clear();
@@ -169,15 +176,30 @@ bool Connection::receive_ack()
 
 Message Connection::receive(Message::Type expected_type)
 {
-    debug("Waiting for " + expected_type + "...", __FILE__);
+    debug("Waiting for " + Message::str(expected_type) + "...", __FILE__);
     while (true)
     {
-        // TODO: consider that error or bye can be received too
         Message msg = just_receive();
         if (msg.type == expected_type)
         {
             last_sequence_received = msg.sequence;
             return msg;
+        }
+    }
+}
+
+Message Connection::receive(list<Message::Type> expected_types)
+{
+    while (true)
+    {
+        Message msg = just_receive();
+        for (Message::Type &expected : expected_types)
+        {
+            if (msg.type == expected)
+            {
+                last_sequence_received = msg.sequence;
+                return msg;
+            }
         }
     }
 }
@@ -188,74 +210,54 @@ string Connection::receive_content(Message::Type expected_type)
     return msg.content;
 }
 
-Message Connection::receive(list<string> expected_types)
-{
-    while (true)
-    {
-        // TODO: consider that error or bye can be received too
-        Message msg = just_receive();
-        for (auto it = expected_types.begin(); it != expected_types.end(); ++it)
-        {
-            if (*it == msg.type)
-            {
-                last_sequence_received = msg.sequence;
-                return msg;
-            }
-        }
-    }
-}
-
 Message Connection::receive_request()
 {
     debug("Waiting request from " + session + "...", __FILE__);
-    this->sock->set_timeout(0); // Never timeout
+    this->sock->disable_timeout();
     while (true)
     {
-        Message msg = just_receive();
-        if (msg.is_request())
-        {
-            last_sequence_received = msg.sequence;
-            this->sock->set_timeout(Socket::DEFAULT_TIMEOUT);
-            return msg;
-        }
+        Message msg = receive(Message::type_request());
+        this->sock->enable_timeout();
+        return msg;
     }
 }
 
-Connection *Connection::receive_connection()
+Connection* Connection::receive_connection()
 {
     string new_session;
-    sock->set_timeout(0); // Never timeout
+    sock->disable_timeout();
     while (true)
     {
         string msg_s = sock->receive();
         Message msg = Message::parse(msg_s);
+        msg.print('<');
         if (msg.type == Message::Type::SYN && msg.session != session)
         {
-            sock->set_timeout(Socket::DEFAULT_TIMEOUT);
+            sock->enable_timeout();
             return new Connection(msg.session, sock->get_answerer());
         }
     }
 }
 
-string Connection::receive_long_message()
+string Connection::receive_long_content(Message::Type type)
 {
-    string received_string;
+    string received_content;
 
     while (true)
     {
         Message msg = just_receive();
         {
-            if (msg.type == Message::T_END)
+            if (msg.type == type)
             {
                 last_sequence_received = msg.sequence;
+                received_content += msg.content;
                 send_ack();
-                return received_string;
             }
-            else
+            else if (msg.type == Message::Type::END)
             {
                 last_sequence_received = msg.sequence;
-                received_string += msg.content;
                 send_ack();
+                return received_content;
             }
         }
     }
@@ -263,54 +265,36 @@ string Connection::receive_long_message()
 
 void Connection::receive_file(string filepath)
 {
-    debug("Waiting for file!");
-
-    ofstream file;
-    int modification_time;
-
+    int modification_time = stoi(receive_content(Message::Type::MODTIME));
+    list<Message::Type> expected({Message::Type::FILE, Message::Type::END_OF_FILE});
+    ofstream file_stream;
     while (true)
     {
-        Message msg = just_receive();
+        Message msg = receive(expected);
+        if (msg.type == Message::Type::FILE)
         {
-            if (msg.type == Message::T_MODTIME)
-            {
-                last_sequence_received = msg.sequence;
-                modification_time = stoi(msg.content);
-
-                file.open(filepath, ofstream::binary | ofstream::trunc);
-
-                send_ack();
-            }
-            else if (msg.type == Message::T_FILE)
-            {
-                last_sequence_received = msg.sequence;
-                file.write(msg.content.data(), msg.content.length());
-                send_ack();
-            }
-            else if (msg.type == Message::T_EOF)
-            {
-                last_sequence_received = msg.sequence;
-                send_ack();
-                file.close();
-
-                // Sets modification time
-                struct utimbuf ubuf;
-                ubuf.modtime = modification_time;
-                if (utime(filepath.c_str(), &ubuf) != 0)
-                {
-                    perror("utime() error");
-                }
-                return 0;
-            }
-            else if (msg.type == Message::T_ERROR)
-            {
-
-                last_sequence_received = msg.sequence;
-                send_ack();
-                return -1;
-            }
+            file_stream.write(msg.content.data(), msg.content.length());
+            send_ack();
+        }
+        else
+        {
+            break;
         }
     }
+    send_ack();
+    file_stream.close();
+    File file(filepath);
+    file.set_modification_time(modification_time);
+}
+
+int Connection::content_space(Message::Type type)
+{
+    int content_space = SOCKET_BUFFER_SIZE;
+    content_space -= session.length();
+    content_space -= to_string(last_sequence_sent).length() + 1;
+    content_space -= to_string(static_cast<int>(type)).length();
+    content_space -= 4; // separators
+    return content_space;
 }
 
 void Connection::init_sequences()

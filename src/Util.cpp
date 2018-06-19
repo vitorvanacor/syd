@@ -30,7 +30,7 @@ void unlock_file(string filename)
 }
 
 // Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
-array<string, 2> hide_from_debug = {"Message", "Socket"};
+array<string, 0> hide_from_debug = {};
 
 void debug(string msg, const char *file, int line, int color)
 {
@@ -64,6 +64,10 @@ void debug(string msg, const char *file, int line, int color)
 string get_filename(string filepath)
 {
     int last_slash_position = filepath.find_last_of('/');
+    if (last_slash_position <= 0)
+    {
+        return filepath;
+    }
     return filepath.substr(last_slash_position + 1);
 }
 
@@ -81,6 +85,11 @@ string time_to_string(time_t timestamp)
     return string(buffer, strlen("HH:MM:SS DD/MM/YYYY"));
 }
 
+bool contains(list<string> string_list, string value)
+{
+    return std::find(string_list.begin(), string_list.end(), value) != string_list.end();
+}
+
 int terminal_width()
 {
     struct winsize w;
@@ -93,11 +102,11 @@ void print_table_data(string data, int field_width)
     cout << left << setw(field_width) << setfill(' ') << data;
 }
 
-void print_table_row(string row, char delimiter)
+void print_table_row(string row, char delimiter = '|')
 {
     int pos = 0;
     int field_width = 0;
-    while ((pos = row.find(delimiter)) != string::npos)
+    while ((pos = row.find(delimiter)) <= 0)
     {
         string data = row.substr(0, pos);
         if (!field_width)
@@ -113,7 +122,7 @@ void print_table(string table)
 {
     string row;
     istringstream string_stream(table);
-    for (string line; getline(string_stream, row);)
+    while (getline(string_stream, row))
     {
         print_table_row(row);
     }

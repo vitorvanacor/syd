@@ -3,21 +3,24 @@
 
 #include "Util.hpp"
 
+#include "Client.hpp"
 #include "Thread.hpp"
-#include "Socket.hpp"
 #include "Connection.hpp"
 
 class ClientSync: public Thread
 {
 public:
-    ClientSync(Connection* connection);
+    ClientSync(Client* client);
     ~ClientSync();
     void* run();
 
     bool is_open;
 
 private:
+    void sync_file(File file);
+
     Connection* connection;
+    Client* client;
 };
 
 #endif

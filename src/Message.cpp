@@ -24,18 +24,31 @@ string Message::stringify()
     return msg;
 }
 
-bool Message::is_request()
+list<Message::Type> Message::type_request()
 {
-    switch (type)
-    {
-    case LIST_SERVER:
-    case DOWNLOAD:
-    case UPLOAD:
-    case BYE:
-        return true;
-    default:
-        return false;
-    }
+    list<Message::Type> req;
+    req.push_back(Message::Type::LIST_SERVER);
+    req.push_back(Message::Type::DOWNLOAD);
+    req.push_back(Message::Type::UPLOAD);
+    req.push_back(Message::Type::BYE);
+    return req;
+}
+
+list<Message::Type> Message::type_sync()
+{
+    list<Message::Type> syn;
+    syn.push_back(Message::Type::SYNC);
+    syn.push_back(Message::Type::DONE);
+    return syn;
+}
+
+list<Message::Type> Message::type_action()
+{
+    list<Message::Type> act;
+    act.push_back(Message::Type::UPLOAD);
+    act.push_back(Message::Type::DOWNLOAD);
+    act.push_back(Message::Type::DONE);
+    return act;
 }
 
 void Message::print(char direction, string username)
@@ -114,5 +127,8 @@ string Message::str(Message::Type type)
         return "DONE";
     case EQUAL:
         return "EQUAL";
+    case END:
+        return "END";
     }
+    return "INVALID_MESSAGE_TYPE";
 }
