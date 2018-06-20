@@ -18,8 +18,12 @@ class ServerSync : public Thread
     list<string> files_in_transfer;
 
   private:
+    void sync_client_files();
+    void send_files_to_client();
+
     Connection *connection;
     ServerThread* server;
+    list<string> updated_files;
 };
 
 #endif

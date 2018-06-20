@@ -51,23 +51,39 @@ list<Message::Type> Message::type_action()
     return act;
 }
 
-void Message::print(char direction, string username)
+list<Message::Type> Message::type_file()
 {
+    list<Message::Type> fil;
+    fil.push_back(Message::Type::FILE);
+    fil.push_back(Message::Type::END);
+    return fil;
+}
+
+void Message::print(char direction)
+{
+    string msg;
     if (direction == '>')
     {
-        debug("===>");
+        msg += "|===>  ";
     }
     else if (direction == '<')
     {
-        debug("<===");
+        msg += "<===|  ";
     }
-    debug("|  Session  |  " + session + " " + username);
-    debug("|  Sequence |  " + to_string(sequence));
-    debug("|  Type     |  " + str(type));
-    if (!content.empty())
+    msg += "(" + session + ") " + to_string(sequence) + ": " + str(type) + " ";
+    if (type == Message::Type::FILE || type == Message::Type::LIST_SERVER)
     {
-        debug("|  Content  |  " + content);
+        msg += "(" + to_string(content.length()) + " bytes)";
     }
+    else if (type == Message::Type::MODTIME)
+    {
+        msg += "(" + time_to_string(stoi(content)) + ")";
+    }
+    else if (!content.empty())
+    {
+        msg += content;
+    }
+    debug(msg, __FILE__);
 }
 
 Message Message::parse(string msg)
@@ -101,6 +117,10 @@ string Message::str(Message::Type type)
         return "SYN";
     case ACK:
         return "ACK";
+    case ERROR:
+        return "ERROR";
+    case OK:
+        return "OK";
     case LOGIN:
         return "LOGIN";
     case LIST_SERVER:
@@ -115,20 +135,12 @@ string Message::str(Message::Type type)
         return "FILE";
     case MODTIME:
         return "MODTIME";
-    case END_OF_FILE:
-        return "END_OF_FILE";
-    case ERROR:
-        return "ERROR";
     case SYNC:
         return "SYNC";
-    case STAT:
-        return "STAT";
-    case DONE:
-        return "DONE";
-    case EQUAL:
-        return "EQUAL";
     case END:
         return "END";
+    case DONE:
+        return "DONE";
     }
     return "INVALID_MESSAGE_TYPE";
 }

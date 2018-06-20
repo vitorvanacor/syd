@@ -12,6 +12,8 @@ public:
   {
     SYN,
     ACK,
+    OK,
+    ERROR,
     LOGIN,
     LIST_SERVER,
     DOWNLOAD,
@@ -20,22 +22,19 @@ public:
     END,
     FILE,
     MODTIME,
-    END_OF_FILE,
-    ERROR,
     SYNC,
-    STAT,
-    DONE,
-    EQUAL
+    DONE
   };
 
   Message(string session, int sequence, Message::Type type, string content);
 
   string stringify();
-  void print(char direction = '\0', string username = "");
+  void print(char direction = '\0');
 
   static list<Message::Type> type_request();
   static list<Message::Type> type_sync();
   static list<Message::Type> type_action();
+  static list<Message::Type> type_file();
   static Message parse(string msg);
 
   Message::Type type;

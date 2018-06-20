@@ -20,7 +20,6 @@ class Client
     void mainloop();
     
     void list_server();
-    void list_client();
     void close_session();
 };
 

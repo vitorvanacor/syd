@@ -7,20 +7,22 @@
 #include "Thread.hpp"
 #include "Connection.hpp"
 
-class ClientSync: public Thread
+class ClientSync : public Thread
 {
-public:
-    ClientSync(Client* client);
+  public:
+    ClientSync(Client *client);
     ~ClientSync();
-    void* run();
+    void *run();
 
     bool is_open;
 
-private:
+  private:
+    void sync_own_files();
     void sync_file(File file);
+    void receive_files_from_server();
 
-    Connection* connection;
-    Client* client;
+    Connection *connection;
+    Client *client;
 };
 
 #endif

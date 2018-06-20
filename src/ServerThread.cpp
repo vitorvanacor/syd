@@ -17,11 +17,10 @@ void *ServerThread::run()
 {
     connection->confirm();
     username = connection->receive_content(Message::Type::LOGIN);
-    connection->send_ack();
     File::create_directory(username);
 
     ServerSync* server_sync = new ServerSync(this);
-    //server_sync->start();
+    server_sync->start();
 
     cout << username << " logged in" << endl;
 
@@ -38,11 +37,11 @@ void ServerThread::mainloop()
 
         if (request.type == Message::Type::UPLOAD)
         {
-            receive_file(request.content);
+            receive_upload(request.content);
         }
         else if (request.type == Message::Type::DOWNLOAD)
         {
-            send_file(request.content);
+            send_download(request.content);
         }
         else if (request.type == Message::Type::LIST_SERVER)
         {
@@ -50,7 +49,6 @@ void ServerThread::mainloop()
         }
         else if (request.type == Message::Type::BYE)
         {
-            close_session();
             break;
         }
     }
@@ -58,7 +56,7 @@ void ServerThread::mainloop()
     is_open = false;
 }
 
-void ServerThread::receive_file(string filename, Connection* connection)
+void ServerThread::receive_upload(string filename, Connection* connection)
 {
     if (!connection)
     {
@@ -67,6 +65,7 @@ void ServerThread::receive_file(string filename, Connection* connection)
     string filepath = username + '/' + filename;
     if (can_be_transfered(filename))
     {
+        connection->send(Message::Type::OK);
         cout << username << " is uploading " << filename << "..." << endl;
         connection->receive_file(filepath);
         unlock_file(filename);
@@ -75,12 +74,12 @@ void ServerThread::receive_file(string filename, Connection* connection)
     else
     {
         cout << "Error: File " << filename << " currently syncing" << endl;
-        connection->send_ack(false);
+        connection->send(Message::Type::ERROR, "File currently syncing");
         return;
     }
 }
 
-void ServerThread::send_file(string filename, Connection* connection)
+void ServerThread::send_download(string filename, Connection* connection)
 {
     if (!connection)
     {
@@ -91,14 +90,12 @@ void ServerThread::send_file(string filename, Connection* connection)
     if (!file.exists())
     {
         cout << "Error opening file " << filename << " at " << username << endl;
-        connection->send_ack(false);
+        connection->send(Message::Type::ERROR, "File not found");
         return;
     }
     if (can_be_transfered(filename))
     {
-        connection->send_ack();
-        connection->send(Message::Type::MODTIME, to_string(file.modification_time()));
-
+        connection->send(Message::Type::OK);
         cout << username << " is downloading " << filename << "..." << endl;
         connection->send_file(filepath);
         cout << username << " downloaded " << filename << endl;
@@ -106,20 +103,13 @@ void ServerThread::send_file(string filename, Connection* connection)
     }
     else
     {
-        cout << "Error: File " << filename << " already being transfered" << endl;
-        connection->send_ack(false);
-        return;
+        cout << "Error: File " << filename << " currently syncing" << endl;
+        connection->send(Message::Type::ERROR, "File currently syncing");
     }
 }
 
 void ServerThread::list_server()
 {
-    string list_dir_str = File::list_directory_str(username);
-    connection->send_long_content(Message::Type::LIST_SERVER, list_dir_str);
-}
-
-void ServerThread::close_session()
-{
-    connection->send_ack();
-    connection->receive_ack();
+    string file_list = File::list_directory_str(username);
+    connection->send_long_content(Message::Type::LIST_SERVER, file_list);
 }

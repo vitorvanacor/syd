@@ -33,16 +33,26 @@ void Connection::connect_to_host(string hostname, int port)
 
 void Connection::connect()
 {
-    send(Message::Type::SYN); // SYN (1/3)
+    send(Message::Type::SYN);
     sock->set_to_answer(sock);
-    send_ack(); // ACK (3/3)
 }
 
 void Connection::confirm()
 {
     last_sequence_received = 0;
-    send_ack(); // SYN+ACK (2/3)
-    receive_ack();
+    send_ack();
+}
+
+void Connection::connect(Connection *src_connection)
+{
+    sock = src_connection->sock->get_answerer();
+    connect();
+}
+
+void Connection::confirm_receipt(Message msg)
+{
+    last_sequence_received = msg.sequence;
+    send_ack();
 }
 
 void Connection::just_send(Message::Type type, string content)
@@ -54,10 +64,10 @@ void Connection::just_send(Message::Type type, string content)
     messages_sent[last_sequence_sent] = msg.stringify();
 }
 
-bool Connection::send(Message::Type type, string content)
+void Connection::send(Message::Type type, string content)
 {
     just_send(type, content);
-    return receive_ack();
+    receive_ack();
 }
 
 void Connection::send_long_content(Message::Type type, string content)
@@ -75,6 +85,33 @@ void Connection::send_long_content(Message::Type type, string content)
     send(Message::Type::END);
 }
 
+string Connection::receive_long_content(Message::Type type)
+{
+    string received_content;
+
+    while (true)
+    {
+        Message msg = just_receive();
+        {
+            if (msg.type == type)
+            {
+                confirm_receipt(msg);
+                received_content += msg.content;
+            }
+            else if (msg.type == Message::Type::END)
+            {
+                confirm_receipt(msg);
+                return received_content;
+            }
+            else if (msg.type == Message::Type::ERROR)
+            {
+                confirm_receipt(msg);
+                throw ResponseException(msg.content);
+            }
+        }
+    }
+}
+
 void Connection::send_ack(bool ok)
 {
     if (ok)
@@ -89,25 +126,55 @@ void Connection::send_ack(bool ok)
 
 void Connection::send_file(string filename)
 {
-    File file(filename);
-    string modtime = to_string(file.modification_time()); // throw FileNotFound
-    send(Message::Type::MODTIME, modtime);                // throw SendFail, Response
-
-    ifstream file_stream(file.filepath, ifstream::binary);
+    ifstream file_stream(filename, ifstream::binary);
     int content_len = content_space(Message::Type::FILE);
     char *buffer = new char[content_len];
     do
     {
         file_stream.read(buffer, content_len);
         send(Message::Type::FILE, string(buffer, file_stream.gcount()));
+        int new_content_len = content_space(Message::Type::FILE);
+        if (new_content_len < content_len)
+        {
+            delete[] buffer;
+            buffer = new char[new_content_len];
+            content_len = new_content_len;
+        }
     } while (!file_stream.eof());
-    send(Message::Type::END_OF_FILE);
+    delete[] buffer;
+    send(Message::Type::END);
+    File file(filename);
+    string modtime = to_string(file.modification_time());
+    send(Message::Type::MODTIME, modtime);
+}
+
+void Connection::receive_file(string filepath)
+{
+    ofstream file_stream;
+    file_stream.open(filepath, ofstream::binary | ofstream::trunc);
+    while (true)
+    {
+        Message msg = receive(Message::type_file());
+        if (msg.type == Message::Type::FILE)
+        {
+            file_stream.write(msg.content.data(), msg.content.length());
+        }
+        else
+        {
+            break;
+        }
+    }
+    file_stream.close();
+    int modification_time = stoi(receive_content(Message::Type::MODTIME));
+    File file(filepath);
+    file.set_modification_time(modification_time);
 }
 
 void Connection::resend()
 {
     for (auto it = messages_sent.begin(); it != messages_sent.end(); ++it)
     {
+        // first = sequence, second = message
         debug("Resending message " + to_string(it->first), __FILE__);
         sock->send(string(it->second));
     }
@@ -148,27 +215,24 @@ Message Connection::just_receive()
     }
 }
 
-bool Connection::receive_ack()
+void Connection::receive_ack()
 {
-    debug("Waiting for ACK " + to_string(last_sequence_sent) + "...");
+    debug("Waiting for ACK " + to_string(last_sequence_sent) + "...", __FILE__);
     while (true)
     {
         Message msg = just_receive();
         {
-            if (stoi(msg.content) == last_sequence_sent)
+            if (msg.type == Message::Type::ACK && stoi(msg.content) == last_sequence_sent)
             {
-                if (msg.type == Message::Type::ACK)
-                {
-                    last_sequence_received = msg.sequence;
-                    messages_sent.clear();
-                    return true;
-                }
-                else if (msg.type == Message::Type::ERROR)
-                {
-                    last_sequence_received = msg.sequence;
-                    messages_sent.clear();
-                    return false;
-                }
+                last_sequence_received = msg.sequence;
+                messages_sent.clear();
+                return;
+            }
+            else if (msg.type == Message::Type::ERROR)
+            {
+                last_sequence_received = msg.sequence;
+                messages_sent.clear();
+                throw ResponseException(msg.content);
             }
         }
     }
@@ -182,8 +246,13 @@ Message Connection::receive(Message::Type expected_type)
         Message msg = just_receive();
         if (msg.type == expected_type)
         {
-            last_sequence_received = msg.sequence;
+            confirm_receipt(msg);
             return msg;
+        }
+        else if (msg.type == Message::Type::ERROR)
+        {
+            confirm_receipt(msg);
+            throw ResponseException(msg.content);
         }
     }
 }
@@ -195,10 +264,15 @@ Message Connection::receive(list<Message::Type> expected_types)
         Message msg = just_receive();
         for (Message::Type &expected : expected_types)
         {
-            if (msg.type == expected)
+            if (msg.type == expected || msg.type == Message::Type::ERROR)
             {
-                last_sequence_received = msg.sequence;
+                confirm_receipt(msg);
                 return msg;
+            }
+            else if (msg.type == Message::Type::ERROR)
+            {
+                confirm_receipt(msg);
+                throw ResponseException(msg.content);
             }
         }
     }
@@ -222,7 +296,7 @@ Message Connection::receive_request()
     }
 }
 
-Connection* Connection::receive_connection()
+Connection *Connection::receive_connection()
 {
     string new_session;
     sock->disable_timeout();
@@ -237,54 +311,6 @@ Connection* Connection::receive_connection()
             return new Connection(msg.session, sock->get_answerer());
         }
     }
-}
-
-string Connection::receive_long_content(Message::Type type)
-{
-    string received_content;
-
-    while (true)
-    {
-        Message msg = just_receive();
-        {
-            if (msg.type == type)
-            {
-                last_sequence_received = msg.sequence;
-                received_content += msg.content;
-                send_ack();
-            }
-            else if (msg.type == Message::Type::END)
-            {
-                last_sequence_received = msg.sequence;
-                send_ack();
-                return received_content;
-            }
-        }
-    }
-}
-
-void Connection::receive_file(string filepath)
-{
-    int modification_time = stoi(receive_content(Message::Type::MODTIME));
-    list<Message::Type> expected({Message::Type::FILE, Message::Type::END_OF_FILE});
-    ofstream file_stream;
-    while (true)
-    {
-        Message msg = receive(expected);
-        if (msg.type == Message::Type::FILE)
-        {
-            file_stream.write(msg.content.data(), msg.content.length());
-            send_ack();
-        }
-        else
-        {
-            break;
-        }
-    }
-    send_ack();
-    file_stream.close();
-    File file(filepath);
-    file.set_modification_time(modification_time);
 }
 
 int Connection::content_space(Message::Type type)

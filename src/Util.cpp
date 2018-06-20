@@ -1,36 +1,8 @@
 #include "Util.hpp"
 
-list<string> files_in_sync;
-pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
-bool can_be_transfered(string filename)
-{
-    pthread_mutex_lock(&sync_mutex);
-    bool can_transfer = true;
-    for (string &file_i : files_in_sync)
-    {
-        if (file_i == filename)
-        {
-            can_transfer = false;
-            break;
-        }
-    }
-    if (can_transfer)
-    {
-        files_in_sync.push_back(filename);
-    }
-    pthread_mutex_unlock(&sync_mutex);
-    return can_transfer;
-}
-
-void unlock_file(string filename)
-{
-    pthread_mutex_lock(&sync_mutex);
-    files_in_sync.remove(filename);
-    pthread_mutex_unlock(&sync_mutex);
-}
-
-// Ex: array<string, 2> hide_from_debug = {"Message", "Socket"};
-array<string, 0> hide_from_debug = {};
+/************ DEBUG *************/
+// Ex: list<string> hide_from_debug = {"Message", "Socket"};
+list<string> hide_from_debug = {"Socket", "Message", "Connection"};
 
 void debug(string msg, const char *file, int line, int color)
 {
@@ -59,6 +31,37 @@ void debug(string msg, const char *file, int line, int color)
         cout << " (line " << line << ")";
     }
     cout << endl;
+}
+
+/*************** MUTEX ****************/
+
+list<string> files_in_sync;
+pthread_mutex_t sync_mutex = PTHREAD_MUTEX_INITIALIZER;
+bool can_be_transfered(string filename)
+{
+    pthread_mutex_lock(&sync_mutex);
+    bool can_transfer = true;
+    for (string &file_i : files_in_sync)
+    {
+        if (file_i == filename)
+        {
+            can_transfer = false;
+            break;
+        }
+    }
+    if (can_transfer)
+    {
+        files_in_sync.push_back(filename);
+    }
+    pthread_mutex_unlock(&sync_mutex);
+    return can_transfer;
+}
+
+void unlock_file(string filename)
+{
+    pthread_mutex_lock(&sync_mutex);
+    files_in_sync.remove(filename);
+    pthread_mutex_unlock(&sync_mutex);
 }
 
 string get_filename(string filepath)
@@ -106,12 +109,14 @@ void print_table_row(string row, char delimiter = '|')
 {
     int pos = 0;
     int field_width = 0;
-    while ((pos = row.find(delimiter)) <= 0)
+    while (!row.empty())
     {
+        pos = row.find(delimiter);
         string data = row.substr(0, pos);
         if (!field_width)
         {
-            field_width = terminal_width() / count(row.begin(), row.end(), delimiter);
+            int field_count = count(row.begin(), row.end(), delimiter);
+            field_width = terminal_width() / field_count;
         }
         print_table_data(data, field_width);
         row.erase(0, pos + 1);
@@ -125,5 +130,6 @@ void print_table(string table)
     while (getline(string_stream, row))
     {
         print_table_row(row);
+        cout << endl;
     }
 }

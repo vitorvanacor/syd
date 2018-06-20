@@ -102,9 +102,9 @@ list<File> File::list_directory(string dirpath)
         while ((dir_entry = readdir(directory)))
         {
             string filename = string(dir_entry->d_name);
-            if (filename != "." && filename != "..")
+            if (filename != "." && filename != ".." && filename != "sync_log")
             {
-                File file(filename);
+                File file(dirpath+"/"+filename);
                 file_list.push_back(file);
             }
         }
@@ -119,13 +119,17 @@ string File::list_directory_str(string dirpath)
     list<File> list_dir = File::list_directory(dirpath);
     for (File &file : list_dir)
     {
-        list_dir_str += file.stringify();
+        list_dir_str += file.stringify() + "\n";
     }
     return list_dir_str;
 }
 
 void File::print_file_list(string file_list)
 {
+    if (file_list.empty())
+    {
+        file_list = "(Empty)|";
+    }
     file_list.insert(0, "Name|Created At|Modified At|Last Accessed At|\n");
     print_table(file_list);
 }

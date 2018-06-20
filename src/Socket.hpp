@@ -2,8 +2,7 @@
 #define SOCKET_H
 #include "Util.hpp"
 
-#define SOCKET_BUFFER_SIZE 1200
-#define PACKET_SIZE 1000
+#define SOCKET_BUFFER_SIZE 2000
 
 class Socket
 {

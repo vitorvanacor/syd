@@ -63,7 +63,7 @@ enum Color
 class timeout_exception : public runtime_error
 {
 public:
-  timeout_exception() : runtime_error("ERROR: Timeout") {}
+  timeout_exception() : runtime_error("Timeout Exception") {}
 };
 
 #endif

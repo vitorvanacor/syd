@@ -15,8 +15,8 @@ class ServerThread : public Thread
     void *run();
 
     void mainloop();
-    void receive_file(string filename, Connection* connection = NULL);
-    void send_file(string filename, Connection* connection = NULL);
+    void receive_upload(string filename, Connection* connection = NULL);
+    void send_download(string filename, Connection* connection = NULL);
     void list_server();
     void close_session();
 
