@@ -16,8 +16,7 @@ ClientSync::~ClientSync()
 
 void *ClientSync::run()
 {
-    this->connection = new Connection();
-    this->connection->connect(client->connection);
+    connection = client->connection->create_connection();
     while (true)
     {
         log("--- Begin Sync");

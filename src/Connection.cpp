@@ -1,21 +1,29 @@
 #include "Connection.hpp"
 
-Connection::Connection(string session, Socket *sock)
+Connection::Connection()
 {
-    this->session = session;
-    if (session.empty())
-    {
-        this->session = to_string(rand() % 10000);
-    }
-    this->sock = sock;
-    init_sequences();
+    session = to_string(rand() % 10000);
+    last_sequence_sent = -1;
+    last_sequence_received = -1;
 }
 
-Connection *Connection::listener(int port)
+Connection::Connection(string hostname, int port) : Connection()
 {
-    Connection *connection = new Connection("0", new Socket(port));
-    connection->sock->bind_server();
-    return connection;
+    sock = new Socket(port);
+    sock->set_host(hostname);
+    connect();
+}
+
+Connection::Connection(int port)
+{
+    sock = new Socket(port);
+    sock->bind_server();
+}
+
+Connection::Connection(string session, Socket* sock) : Connection()
+{
+    this->session = session;
+    this->sock = sock;
 }
 
 Connection::~Connection()
@@ -24,11 +32,28 @@ Connection::~Connection()
     delete this->sock;
 }
 
-void Connection::connect_to_host(string hostname, int port)
+Connection* Connection::create_connection()
 {
-    sock = new Socket(port);
-    sock->set_host(hostname);
-    connect();
+    Connection* new_connection = new Connection();
+    new_connection->sock = sock->get_answerer();
+    new_connection->connect();
+    return new_connection;
+}
+
+Connection *Connection::receive_connection()
+{
+    sock->disable_timeout();
+    while (true)
+    {
+        string msg_s = sock->receive();
+        Message msg = Message::parse(msg_s);
+        msg.print('<');
+        if (msg.type == Message::Type::SYN && msg.session != session)
+        {
+            sock->enable_timeout();
+            return new Connection(msg.session, sock->get_answerer());
+        }
+    }
 }
 
 void Connection::connect()
@@ -41,12 +66,6 @@ void Connection::confirm()
 {
     last_sequence_received = 0;
     send_ack();
-}
-
-void Connection::connect(Connection *src_connection)
-{
-    sock = src_connection->sock->get_answerer();
-    connect();
 }
 
 void Connection::confirm_receipt(Message msg)
@@ -296,23 +315,6 @@ Message Connection::receive_request()
     }
 }
 
-Connection *Connection::receive_connection()
-{
-    string new_session;
-    sock->disable_timeout();
-    while (true)
-    {
-        string msg_s = sock->receive();
-        Message msg = Message::parse(msg_s);
-        msg.print('<');
-        if (msg.type == Message::Type::SYN && msg.session != session)
-        {
-            sock->enable_timeout();
-            return new Connection(msg.session, sock->get_answerer());
-        }
-    }
-}
-
 int Connection::content_space(Message::Type type)
 {
     int content_space = SOCKET_BUFFER_SIZE;
@@ -321,10 +323,4 @@ int Connection::content_space(Message::Type type)
     content_space -= to_string(static_cast<int>(type)).length();
     content_space -= 4; // separators
     return content_space;
-}
-
-void Connection::init_sequences()
-{
-    last_sequence_sent = -1;
-    last_sequence_received = -1;
 }

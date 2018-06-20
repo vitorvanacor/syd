@@ -2,7 +2,7 @@
 
 void Server::start(int port)
 {
-    Connection *listener = Connection::listener(port);
+    listener = new Connection(port);
     cout << "Listening on port " << port << " for connections..." << endl;
     while (true)
     {

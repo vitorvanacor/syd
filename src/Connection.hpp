@@ -10,14 +10,18 @@
 class Connection
 {
 public:
-  Connection(string session = "", Socket *new_socket = NULL);
+  Connection();
+  Connection(int port);
+  Connection(string hostname, int port);
+  Connection(string session, Socket* sock);
   ~Connection();
   static Connection *listener(int port);
 
-  void connect_to_host(string hostname, int port);
   void connect();
-  void connect(Connection *src_connection);
   void confirm();
+
+  Connection* create_connection();
+  Connection *receive_connection();
 
   void send(Message::Type type, string content = "");
   void send_ack(bool ok = true);
@@ -32,7 +36,6 @@ public:
   void receive_file(string filepath);
   string receive_content(Message::Type expected_type);
   string receive_long_content(Message::Type expected_type);
-  Connection *receive_connection();
 
   string session;
   Socket *sock;

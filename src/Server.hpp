@@ -10,6 +10,8 @@ class Server
   public:
     void start(int port);
 
+    Connection* listener;
+
   private:
     void receive_connection(Socket listener);
     void delete_closed_threads();

@@ -23,8 +23,7 @@ Client::~Client()
 void Client::start(string username, string hostname, int port)
 {
     cout << "Connecting to " << hostname << ":" << port << " ..." << endl;
-    connection = new Connection();
-    connection->connect_to_host(hostname, port);
+    connection = new Connection(hostname, port);
     connection->send(Message::Type::LOGIN, username);
     debug("Login ok");
     user_dir = HOME + "/sync_dir_" + username;
