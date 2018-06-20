@@ -39,6 +39,9 @@ public:
   static const string T_STAT;
   static const string T_DONE;
   static const string T_EQUAL;
+  static const string T_ELECTION;
+  static const string T_ALIVE;
+  static const string T_COORD;
 };
 
 #endif

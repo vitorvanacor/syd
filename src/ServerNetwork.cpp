@@ -4,6 +4,11 @@
 
 ServerNetwork::ServerNetwork(Connection *connection) {
 
+  list<string> expected_types;
+  expected_types.push_back(Message::T_ELECTION);
+  expected_types.push_back(Message::T_ALIVE);
+  expected_types.push_back(Message::T_COORD);
+
   void ServerNetwork::run() {
     list <string> otherServers = read("servers.txt");
     string myIP = otherServers[0];
@@ -26,12 +31,18 @@ ServerNetwork::ServerNetwork(Connection *connection) {
     mainloop();
   }
 
-  // ***** TODO *****
   void ServerNetwork::mainloop() {
-    // re-gerar lista de servidores vivos (algum pode ter morrido na eleição - ver caso de não receber ALIVE msg)
+    // run just generated the list of connections, I should call elections
+    election_coordinator();
     while(true) {
-      // fico cuidando pra ver se eu voltei de alguma falha ou se o detector de falhas viu que meu coord. falhou
-      receive_connection(); // fico esperando receber uma mensagem de eleição. se sim, começa o election_coordinator()
+      // keep receiving messages from all to check if one of them recovered and wants an election
+      foreach (onlineServers, string server) {
+        Message msg = server->receive(expected_types); //precisa de um timeout aqui pra dar continue ou ele faz sozinho?
+
+        if (msg.type == Message::T_ELECTION) {
+          election_coordinator();
+        }
+      }
     }
   }
 
@@ -49,8 +60,6 @@ ServerNetwork::ServerNetwork(Connection *connection) {
         candidate->send(Message::T_ELECTION);
         candidate->receive_ack();
 
-        // ***** TODO: pensar no caso de não recer o ack *****
-
         // if I receive an ALIVE message I'm not the bully
         Message msg = candidate->receive(expected_types);
         if (msg.type == Message::T_ALIVE) {
@@ -59,7 +68,7 @@ ServerNetwork::ServerNetwork(Connection *connection) {
           if (candidate.username > the_bully)
           the_bully = candidate;
         }
-        // ***** TODO: pensar no caso de não receber o ALIVE = tirar candidato da lista *****
+        // ***** TODO: pensar no caso de não receber o ALIVE = tirar candidato da lista, pode ser só timeout ou problema temporário *****
       }
     }
 
@@ -70,12 +79,12 @@ ServerNetwork::ServerNetwork(Connection *connection) {
         looser->receive_ack();
       }
     } else {
-      // espero mensagem de vitória para saber quem é meu coordenador
       Message msg = the_bully->receive(expected_types);
       if (msg.type == Message::T_COORD) {
-        // ***** TODO: como dizer que ele é o lider?? *****
+        // do nothing, he is the coordinator
+      } else { // if the bully does not send a message, start election again
+        election_coordinator();
       }
-      // ***** TODO: em caso de timeout, chamar election_coordinator() de novo! *****
     }
   }
 }
