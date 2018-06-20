@@ -1,7 +1,7 @@
 #ifndef CONNECTION_H
 #define CONNECTION_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #include "Socket.hpp"
 #include "Message.hpp"
@@ -10,41 +10,52 @@
 class Connection
 {
 public:
-  Connection(string username, string session = "", Socket *new_socket = NULL);
+  Connection();
+  Connection(int port);
+  Connection(string hostname, int port);
+  Connection(string session, Socket* sock);
   ~Connection();
+  static Connection *listener(int port);
 
   void connect();
-  void accept_connection();
+  void confirm();
 
-  void send(string type, string content = "");
-  void sendb(string stype, char *content = NULL);
+  Connection* create_connection();
+  Connection *receive_connection();
+
+  void send(Message::Type type, string content = "");
   void send_ack(bool ok = true);
-  int send_file(string filepath);
-  void send_string(string data);
+  void send_file(string filename);
+  void send_long_content(Message::Type type, string content = "");
   void resend();
 
-  Message receive(string expected_type);
-  Message receive(list<string> expected_types);
+  Message receive(Message::Type expected_type);
+  Message receive(list<Message::Type> expected_types);
   Message receive_request();
-  bool receive_ack();
-  int receive_file(string filepath);
-  string receive_string();
-  string list_server_dir(string dirpath);
+  void receive_ack();
+  void receive_file(string filepath);
+  string receive_content(Message::Type expected_type);
+  string receive_long_content(Message::Type expected_type);
 
-  static void *server_thread(void *void_this);
-
-  string username;
-  string user_directory;
   string session;
   Socket *sock;
 
 private:
-  Message receive();
+  void just_send(Message::Type type, string content = "");
+  Message just_receive();
+  void confirm_receipt(Message msg);
+  int content_space(Message::Type type);
   void init_sequences();
 
   map<int, string> messages_sent;
   int last_sequence_sent;
   int last_sequence_received;
+};
+
+class ResponseException : public runtime_error
+{
+public:
+  ResponseException(string what_arg) : runtime_error(what_arg) {}
 };
 
 #endif

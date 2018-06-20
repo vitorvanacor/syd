@@ -23,6 +23,8 @@ Socket::Socket(int _port)
     timeout.tv_sec = DEFAULT_TIMEOUT;
     timeout.tv_usec = 0;
     setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
+    zero_timeout.tv_sec = 0;
+    timeout.tv_usec = 0;
 }
 
 Socket::~Socket()
@@ -83,7 +85,7 @@ void Socket::send(string bytes)
     }
     else
     {
-        debug("ERROR: no host nor destination address set", __FILE__, __LINE__);
+        debug(to_string(id)+": ERROR: no host nor destination address set", __FILE__, __LINE__);
         return;
     }
 
@@ -103,19 +105,24 @@ void Socket::set_timeout(int seconds)
     setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
 }
 
-sockaddr_in Socket::get_sender_address()
+void Socket::enable_timeout()
 {
-    return sender_address;
+    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&timeout, sizeof timeout);
 }
 
-void Socket::set_dest_address(sockaddr_in new_dest_address)
+void Socket::disable_timeout()
 {
-    dest_address = new_dest_address;
+    setsockopt(id, SOL_SOCKET, SO_RCVTIMEO, (const char *)&zero_timeout, sizeof timeout);
 }
 
-Socket* Socket::get_answerer()
+Socket *Socket::get_answerer()
 {
-    Socket* answerer = new Socket(port);
-    answerer->dest_address = sender_address;
+    Socket *answerer = new Socket(port);
+    answerer->set_to_answer(this);
     return answerer;
+}
+
+void Socket::set_to_answer(Socket* sock)
+{
+    dest_address = sock->sender_address;
 }

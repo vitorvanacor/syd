@@ -1,16 +1,16 @@
 #ifndef SERVERSYNC_H
 #define SERVERSYNC_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
-#include "Thread.hpp"
+#include "ServerThread.hpp"
 #include "Socket.hpp"
 #include "Connection.hpp"
 
 class ServerSync : public Thread
 {
   public:
-    ServerSync(Connection *connection);
+    ServerSync(ServerThread* server);
     ~ServerSync();
     void *run();
 
@@ -18,7 +18,12 @@ class ServerSync : public Thread
     list<string> files_in_transfer;
 
   private:
+    void sync_client_files();
+    void send_files_to_client();
+
     Connection *connection;
+    ServerThread* server;
+    list<string> updated_files;
 };
 
 #endif

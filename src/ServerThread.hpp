@@ -1,7 +1,7 @@
 #ifndef SERVERTHREAD_H
 #define SERVERTHREAD_H
 
-#include "sydUtil.h"
+#include "Util.hpp"
 
 #include "Thread.hpp"
 #include "Socket.hpp"
@@ -14,10 +14,16 @@ class ServerThread : public Thread
     ~ServerThread();
     void *run();
 
-    bool is_open;
+    void mainloop();
+    void receive_upload(string filename, Connection* connection = NULL);
+    void send_download(string filename, Connection* connection = NULL);
+    void list_server();
+    void close_session();
 
-  private:
+    bool is_open;
+    string username;
     Connection *connection;
+    
 };
 
 #endif

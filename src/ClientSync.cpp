@@ -3,20 +3,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#ifndef WIN32
-#include <unistd.h>
-#endif
-
-#ifdef WIN32
-#define stat _stat
-#endif
-
-ClientSync::ClientSync(Connection *_connection)
+ClientSync::ClientSync(Client *client) : Thread()
 {
-    this->connection = new Connection(_connection->username);
-    this->connection->sock = _connection->sock->get_answerer();
-    this->connection->connect();
-    this->start();
+    this->client = client;
+    log_file = client->user_dir + "/sync_log";
 }
 
 ClientSync::~ClientSync()
@@ -26,157 +16,62 @@ ClientSync::~ClientSync()
 
 void *ClientSync::run()
 {
+    connection = client->connection->create_connection();
     while (true)
     {
-        debug("INIT SYNC",__FILE__,__LINE__,Color::GREEN);
-        connection->send(Message::T_SYNC);
-        connection->receive_ack();
-
-        list<string> list_filename = File::list_filename(connection->user_directory);
-
-        for (list<string>::iterator it = list_filename.begin(); it != list_filename.end(); ++it)
-        {
-            string filename = *it;
-            string filepath = connection->user_directory + '/' + filename;
-            if (can_be_transfered(filename))
-            {
-                int timestamp = get_filetimestamp(filepath);
-                if (timestamp != -1)
-                {
-                    string content = to_string(timestamp) + '|' + filename;
-                    connection->send(Message::T_STAT, content);
-                    connection->receive_ack();
-                    list<string> expected_types;
-                    expected_types.push_back(Message::T_DOWNLOAD);
-                    expected_types.push_back(Message::T_UPLOAD);
-                    expected_types.push_back(Message::T_EQUAL);
-                    expected_types.push_back(Message::T_ERROR);
-
-                    Message msg = connection->receive(expected_types);
-
-                    if (msg.type == Message::T_DOWNLOAD)
-                    {
-                        debug("Starting to download" + filename + " ...");
-                        connection->send_ack();
-                        if (connection->receive_file(filepath) == 0)
-                            debug(filename + " downloaded successfully!");
-                        else
-                            debug(filename + " download failed!");
-                    }
-                    else if (msg.type == Message::T_UPLOAD)
-                    {
-                        debug("Starting to upload" + filename + " ...");
-                        connection->send_ack();
-                        try
-                        {
-                            if (!ifstream(filepath))
-                            {
-                                cout << "Error opening file " << filename << " at " << connection->user_directory << endl;
-
-                                connection->send_ack(false);
-                                connection->receive_ack();
-
-                                unlock_file(filename);
-                                continue;
-                            }
-
-                            int timestamp = get_filetimestamp(filepath);
-
-                            connection->send(Message::T_SOF, to_string(timestamp));
-                            connection->receive_ack();
-
-                            debug("Starting to upload " + filename + " ...");
-                            if (connection->send_file(filepath) == 0)
-                                debug(filename + " uploaded successfully!");
-                            else
-                                debug(filename + " uploaded failed!");
-                        }
-                        catch (exception &e)
-                        {
-                            cout << e.what() << endl;
-
-                            connection->send_ack(false);
-                            connection->receive_ack();
-                            unlock_file(filename);
-                            continue;
-                        }
-                    }
-                    else if (msg.type == Message::T_EQUAL)
-                    {
-                        debug("File is already up-to-date.");
-                        connection->send_ack();
-                        unlock_file(filename);
-                        continue;
-                    }
-                    else
-                    {
-                        debug("File currently being transfered");
-                        connection->send_ack();
-                        unlock_file(filename);
-                        continue;
-                    }
-                }
-                else
-                {
-                    debug("Error generating timestamp!");
-                    unlock_file(filename);
-                    continue;
-                }
-                unlock_file(filename);
-            }
-        }
-        connection->send(Message::T_DONE);
-        connection->receive_ack();
-
-        list<string> expected_types;
-        expected_types.push_back(Message::T_DONE);
-        expected_types.push_back(Message::T_DOWNLOAD);
-        expected_types.push_back(Message::T_ERROR);
-
-        // Receives for files that client doesn't have yet
-        while (true)
-        {
-            Message msg = connection->receive(expected_types);
-            if (msg.type == Message::T_DONE)
-            {
-                debug("Sync finished!");
-                connection->send_ack();
-                break;
-            }
-            else if (msg.type == Message::T_DOWNLOAD)
-            {
-                string filename = msg.content;
-                string filepath = connection->user_directory + '/' + filename;
-                if (can_be_transfered(filename))
-                {
-                    debug("Starting to download" + filename + " ...");
-                    connection->send_ack();
-                    if (connection->receive_file(filepath) == 0)
-                    {
-                        debug(filename + " downloaded successfully!");
-                    }
-                    else
-                    {
-                        debug(filename + " download failed!");
-                    }
-                    unlock_file(filename);
-                }
-                else
-                {
-                    cout << "Error: File " << filename << " already being transfered" << endl;
-                    connection->send_ack(false);
-                    connection->receive_ack();
-                    continue;
-                }
-            }
-            else
-            {
-                debug("Error! File not found!");
-                connection->send_ack();
-                continue;
-            }
-        }
-        debug("SLEEPING for 5",__FILE__,__LINE__,Color::RED);
+        log("--- Begin Sync");
+        sync_own_files();
+        log("--- Receive from server");
+        receive_files_from_server();
+        log("--- Sync Done");
         sleep(5);
+    }
+}
+
+void ClientSync::sync_own_files()
+{
+    for (File &file : File::list_directory(client->user_dir))
+    {
+        sync_file(file);
+    }
+    connection->send(Message::Type::DONE);
+}
+
+void ClientSync::sync_file(File file)
+{
+    connection->send(Message::Type::SYNC, file.name());
+    int modtime = stoi(connection->receive_content(Message::Type::MODTIME));
+    log(file.name()+": "+time_to_string(file.modification_time())+" | "+time_to_string(modtime));
+    if (modtime < file.modification_time())
+    {
+        log("Upload " + file.name() + "...");
+        client->upload_file(file.name(), client->user_dir, connection);
+        log("ok");
+    }
+    else if (modtime > file.modification_time())
+    {
+        log("Download " + file.name() + "...");
+        client->download_file(file.name(), client->user_dir, connection);
+        log("ok");
+    }
+    else
+    {
+        connection->send(Message::Type::DONE);
+    }
+}
+
+void ClientSync::receive_files_from_server()
+{
+    while (true)
+    {
+        Message msg = connection->receive(Message::type_sync());
+        if (msg.type == Message::Type::DONE)
+        {
+            break;
+        }
+        string filename = msg.content;
+        log("Download " + filename + "...");
+        connection->receive_file(client->user_dir + "/" + filename);
+        log("ok");
     }
 }

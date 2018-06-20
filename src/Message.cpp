@@ -2,22 +2,7 @@
 
 const string Message::MSG_SEPARATOR = "|";
 
-const string Message::T_SYN = "SYN";
-const string Message::T_ACK = "ACK";
-const string Message::T_LS = "LS";
-const string Message::T_DOWNLOAD = "DOWN";
-const string Message::T_UPLOAD = "UP";
-const string Message::T_BYE = "BYE";
-const string Message::T_FILE = "FILE";
-const string Message::T_SOF = "SOF";
-const string Message::T_EOF = "EOF";
-const string Message::T_ERROR = "ERRO";
-const string Message::T_SYNC = "SYNC";
-const string Message::T_STAT = "STAT";
-const string Message::T_DONE = "DONE";
-const string Message::T_EQUAL = "EQAL";
-
-Message::Message(string session, int sequence, string type, string content = "")
+Message::Message(string session, int sequence, Message::Type type, string content = "")
 {
     this->session = session;
     this->sequence = sequence;
@@ -25,42 +10,80 @@ Message::Message(string session, int sequence, string type, string content = "")
     this->content = content;
 }
 
-string Message::to_string()
+string Message::stringify()
 {
     string msg = "";
     msg += session;
     msg += Message::MSG_SEPARATOR;
-    msg += std::to_string(sequence);
+    msg += to_string(sequence);
     msg += Message::MSG_SEPARATOR;
-    msg += type;
+    msg += to_string(static_cast<int>(type));
     msg += Message::MSG_SEPARATOR;
     msg += content;
     msg += Message::MSG_SEPARATOR;
     return msg;
 }
 
-bool Message::is_request()
+list<Message::Type> Message::type_request()
 {
-    return (type == Message::T_LS || type == Message::T_DOWNLOAD || type == Message::T_UPLOAD || type == Message::T_BYE);
+    list<Message::Type> req;
+    req.push_back(Message::Type::LIST_SERVER);
+    req.push_back(Message::Type::DOWNLOAD);
+    req.push_back(Message::Type::UPLOAD);
+    req.push_back(Message::Type::BYE);
+    return req;
 }
 
-void Message::print(char direction, string username)
+list<Message::Type> Message::type_sync()
 {
+    list<Message::Type> syn;
+    syn.push_back(Message::Type::SYNC);
+    syn.push_back(Message::Type::DONE);
+    return syn;
+}
+
+list<Message::Type> Message::type_action()
+{
+    list<Message::Type> act;
+    act.push_back(Message::Type::UPLOAD);
+    act.push_back(Message::Type::DOWNLOAD);
+    act.push_back(Message::Type::DONE);
+    return act;
+}
+
+list<Message::Type> Message::type_file()
+{
+    list<Message::Type> fil;
+    fil.push_back(Message::Type::FILE);
+    fil.push_back(Message::Type::END);
+    return fil;
+}
+
+void Message::print(char direction)
+{
+    string msg;
     if (direction == '>')
     {
-        debug("===>");
+        msg += "|===>  ";
     }
     else if (direction == '<')
     {
-        debug("<===");
+        msg += "<===|  ";
     }
-    debug("|  Session  |  " + session + " " + username);
-    debug("|  Sequence |  " + std::to_string(sequence));
-    debug("|  Type     |  " + type);
-    if (!content.empty())
+    msg += "(" + session + ") " + to_string(sequence) + ": " + str(type) + " ";
+    if (type == Message::Type::FILE || type == Message::Type::LIST_SERVER)
     {
-        debug("|  Content  |  " + content);
+        msg += "(" + to_string(content.length()) + " bytes)";
     }
+    else if (type == Message::Type::MODTIME)
+    {
+        msg += "(" + time_to_string(stoi(content)) + ")";
+    }
+    else if (!content.empty())
+    {
+        msg += content;
+    }
+    debug(msg, __FILE__);
 }
 
 Message Message::parse(string msg)
@@ -80,8 +103,44 @@ Message Message::parse(string msg)
     // Assign
     string session = msg.substr(0, session_len);
     string sequence = msg.substr(session_sep + 1, sequence_len);
-    string type = msg.substr(sequence_sep + 1, type_len);
+    Message::Type type = static_cast<Message::Type>(stoi(msg.substr(sequence_sep + 1, type_len)));
     string content = msg.substr(type_sep + 1, content_len);
 
     return Message(session, stoi(sequence), type, content);
+}
+
+string Message::str(Message::Type type)
+{
+    switch (type)
+    {
+    case SYN:
+        return "SYN";
+    case ACK:
+        return "ACK";
+    case ERROR:
+        return "ERROR";
+    case OK:
+        return "OK";
+    case LOGIN:
+        return "LOGIN";
+    case LIST_SERVER:
+        return "LIST_SERVER";
+    case DOWNLOAD:
+        return "DOWNLOAD";
+    case UPLOAD:
+        return "UPLOAD";
+    case BYE:
+        return "BYE";
+    case FILE:
+        return "FILE";
+    case MODTIME:
+        return "MODTIME";
+    case SYNC:
+        return "SYNC";
+    case END:
+        return "END";
+    case DONE:
+        return "DONE";
+    }
+    return "INVALID_MESSAGE_TYPE";
 }

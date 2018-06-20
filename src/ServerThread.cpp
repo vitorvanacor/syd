@@ -15,88 +15,101 @@ ServerThread::~ServerThread()
 
 void *ServerThread::run()
 {
-    connection->accept_connection();
-    ServerSync server_sync(connection);
-    server_sync.start();
-    cout << connection->username << " logged in" << endl;
+    connection->confirm();
+    username = connection->receive_content(Message::Type::LOGIN);
+    File::create_directory(username);
+
+    ServerSync* server_sync = new ServerSync(this);
+    server_sync->start();
+
+    cout << username << " logged in" << endl;
+
+    mainloop();
+
+    return NULL;
+}
+
+void ServerThread::mainloop()
+{
     while (true)
     {
         Message request = connection->receive_request();
-        if (request.type == Message::T_LS)
+
+        if (request.type == Message::Type::UPLOAD)
         {
-            connection->send_string(connection->list_server_dir(connection->user_directory));
-            connection->receive_ack();
+            receive_upload(request.content);
         }
-        else if (request.type == Message::T_UPLOAD)
+        else if (request.type == Message::Type::DOWNLOAD)
         {
-            string filename = request.content;
-            string filepath = connection->user_directory + '/' + filename;
-            if (!can_be_transfered(request.content))
-            {
-                cout << "Error: File " << filename << " already being transfered" << endl;
-                connection->send_ack(false);
-                connection->receive_ack();
-                continue;
-            }
-            connection->send_ack();
-            cout << connection->username << " is uploading " << filename << "..." << endl;
-            connection->receive_file(filepath);
-            unlock_file(filename);
-            cout << connection->username << " uploaded " << filename << endl;
+            send_download(request.content);
         }
-        else if (request.type == Message::T_DOWNLOAD)
+        else if (request.type == Message::Type::LIST_SERVER)
         {
-            string filename = request.content;
-            string filepath = connection->user_directory + '/' + filename;
-            if (!can_be_transfered(filename))
-            {
-                cout << "Error: File " << filename << " already being transfered" << endl;
-                connection->send_ack(false);
-                connection->receive_ack();
-                cout << "Continuing" << endl;
-                continue;
-            }
-            connection->send_ack();
-            try
-            {
-                if (!ifstream(filepath))
-                {
-                    cout << "Error opening file " << request.content << " at " << connection->user_directory << endl;
-
-                    connection->send_ack(false);
-                    connection->receive_ack();
-                    unlock_file(filename);
-                    continue;
-                }
-                int timestamp = get_filetimestamp(filepath);
-
-                connection->send(Message::T_SOF, to_string(timestamp));
-                connection->receive_ack();
-
-                cout << connection->username << " is downloading " << request.content << "..." << endl;
-                connection->send_file(filepath);
-                unlock_file(filename);
-                cout << connection->username << " downloaded " << request.content << endl;
-            }
-            catch (exception &e)
-            {
-                connection->send_ack(false);
-                connection->receive_ack();
-
-                cout << e.what() << endl;
-                unlock_file(filename);
-                continue;
-            }
-            unlock_file(filename);
+            list_server();
         }
-        else if (request.type == Message::T_BYE)
+        else if (request.type == Message::Type::BYE)
         {
-            connection->send_ack();
-            connection->receive_ack();
             break;
         }
     }
-    cout << "User " << connection->username << " logged out." << endl;
+    cout << "User " << username << " logged out." << endl;
     is_open = false;
-    return NULL;
+}
+
+void ServerThread::receive_upload(string filename, Connection* connection)
+{
+    if (!connection)
+    {
+        connection = this->connection;
+    }
+    string filepath = username + '/' + filename;
+    if (can_be_transfered(filename))
+    {
+        connection->send(Message::Type::OK);
+        cout << username << " is uploading " << filename << "..." << endl;
+        connection->receive_file(filepath);
+        unlock_file(filename);
+        cout << username << " uploaded " << filename << endl;
+    }
+    else
+    {
+        cout << "Error: File " << filename << " currently syncing" << endl;
+        connection->send(Message::Type::ERROR, "File currently syncing");
+        return;
+    }
+}
+
+void ServerThread::send_download(string filename, Connection* connection)
+{
+    if (!connection)
+    {
+        connection = this->connection;
+    }
+    string filepath = username + '/' + filename;
+    File file(filepath);
+    if (!file.exists())
+    {
+        cout << "Error opening file " << filename << " at " << username << endl;
+        connection->send(Message::Type::ERROR, "File not found");
+        return;
+    }
+    if (can_be_transfered(filename))
+    {
+        connection->send(Message::Type::OK);
+        cout << username << " is downloading " << filename << "..." << endl;
+        connection->send_file(filepath);
+        cout << username << " downloaded " << filename << endl;
+        unlock_file(filename);
+    }
+    else
+    {
+        cout << "Error: File " << filename << " currently syncing" << endl;
+        connection->send(Message::Type::ERROR, "File currently syncing");
+    }
+}
+
+void ServerThread::list_server()
+{
+    string file_list = File::list_directory_str(username);
+    connection->send_long_content(Message::Type::LIST_SERVER, file_list);
 }
