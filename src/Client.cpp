@@ -1,6 +1,5 @@
 #include "Client.hpp"
 
-#include "File.hpp"
 #include "ClientSync.hpp"
 
 #include <sys/types.h>
@@ -29,7 +28,7 @@ void Client::start(string username, string hostname, int port)
     user_dir = HOME + "/sync_dir_" + username;
     File::create_directory(user_dir);
 
-    ClientSync *client_sync = new ClientSync(this);
+    ClientSync* client_sync = new ClientSync(this);
     client_sync->start();
     cout << "Successfully logged in as " << username << "!" << endl;
 

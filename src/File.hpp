@@ -23,6 +23,7 @@ class File
     static string working_directory();
     static void create_directory(string path);
     static list<File> list_directory(string dirpath);
+    static list<string> list_directory_filenames(string dirpath);
     static string list_directory_str(string dirpath);
     static void print_file_list(string file_list);
     static list<File> parse_file_list(string msg);

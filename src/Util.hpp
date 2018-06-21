@@ -2,6 +2,7 @@
 #define SYDUTIL_H
 
 //C headers
+#include <dirent.h>
 #include <netinet/in.h>
 #include <netdb.h> // hostent
 #include <pthread.h>
@@ -9,11 +10,13 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <time.h>
 #include <unistd.h> // close
 #include <utime.h>
 
 //C++ headers
 #include <algorithm>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <iostream>

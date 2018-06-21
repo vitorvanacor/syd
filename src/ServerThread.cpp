@@ -1,10 +1,11 @@
 #include "ServerThread.hpp"
 
-#include "ServerSync.hpp"
+#include "Server.hpp"
 
-ServerThread::ServerThread(Connection *connection)
+ServerThread::ServerThread(Server* server, Connection *connection)
 {
     is_open = true;
+    this->server = server;
     this->connection = connection;
 }
 
@@ -19,7 +20,7 @@ void *ServerThread::run()
     username = connection->receive_content(Message::Type::LOGIN);
     File::create_directory(username);
 
-    ServerSync* server_sync = new ServerSync(this);
+    server_sync = new ServerSync(this);
     server_sync->start();
 
     cout << username << " logged in" << endl;

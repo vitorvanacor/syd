@@ -23,6 +23,7 @@ public:
     FILE,
     MODTIME,
     SYNC,
+    DELETE,
     DONE
   };
 

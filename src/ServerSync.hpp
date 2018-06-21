@@ -3,14 +3,15 @@
 
 #include "Util.hpp"
 
-#include "ServerThread.hpp"
-#include "Socket.hpp"
+#include "Thread.hpp"
 #include "Connection.hpp"
+
+class ServerThread;
 
 class ServerSync : public Thread
 {
   public:
-    ServerSync(ServerThread* server);
+    ServerSync(ServerThread* parent);
     ~ServerSync();
     void *run();
 
@@ -19,11 +20,14 @@ class ServerSync : public Thread
 
   private:
     void sync_client_files();
+    void sync_file(string filename);
+    void delete_file(string filename);
     void send_files_to_client();
 
     Connection *connection;
-    ServerThread* server;
-    list<string> updated_files;
+    ServerThread* parent;
+    list<string> files_not_synced;
+    list<string> files_to_delete;
 };
 
 #endif

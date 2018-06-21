@@ -21,6 +21,7 @@ class Client
     
     void list_server();
     void close_session();
+
 };
 
 #endif

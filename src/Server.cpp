@@ -11,7 +11,7 @@ void Server::start(int port)
         delete_closed_threads();
         if (!threads.count(connection->session)) // If session doesn't exist
         {
-            ServerThread *new_thread = new ServerThread(connection);
+            ServerThread *new_thread = new ServerThread(this, connection);
             new_thread->start();
             threads[connection->session] = new_thread;
         }
@@ -43,6 +43,6 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[1]);
     }
-    Server server;
-    server.start(port);
+    Server* server = new Server();
+    server->start(port);
 }

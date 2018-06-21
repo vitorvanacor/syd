@@ -11,12 +11,11 @@ class Server
     void start(int port);
 
     Connection* listener;
+    map<string, ServerThread *> threads;
 
   private:
     void receive_connection(Socket listener);
     void delete_closed_threads();
-
-    map<string, ServerThread *> threads;
 };
 
 #endif

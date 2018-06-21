@@ -1,11 +1,5 @@
 #include "File.hpp"
 
-#include <dirent.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <langinfo.h>
-#include <time.h>
-
 File::File(string filepath)
     : filepath(filepath), modification_time_str(""), access_time_str(""), creation_time_str("")
 {
@@ -104,8 +98,29 @@ list<File> File::list_directory(string dirpath)
             string filename = string(dir_entry->d_name);
             if (filename != "." && filename != ".." && filename != "sync_log")
             {
-                File file(dirpath+"/"+filename);
+                File file(dirpath + "/" + filename);
                 file_list.push_back(file);
+            }
+        }
+    }
+    closedir(directory);
+    return file_list;
+}
+
+list<string> File::list_directory_filenames(string dirpath)
+{
+    list<string> file_list;
+    DIR *directory;
+    struct dirent *dir_entry;
+    directory = opendir(dirpath.c_str());
+    if (directory)
+    {
+        while ((dir_entry = readdir(directory)))
+        {
+            string filename = string(dir_entry->d_name);
+            if (filename != "." && filename != ".." && filename != "sync_log")
+            {
+                file_list.push_back(filename);
             }
         }
     }

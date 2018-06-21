@@ -23,6 +23,7 @@ class ClientSync : public Thread
 
     Connection *connection;
     Client *client;
+    list<string> filenames;
 };
 
 #endif

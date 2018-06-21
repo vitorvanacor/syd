@@ -39,6 +39,7 @@ list<Message::Type> Message::type_sync()
     list<Message::Type> syn;
     syn.push_back(Message::Type::SYNC);
     syn.push_back(Message::Type::DONE);
+    syn.push_back(Message::Type::DELETE);
     return syn;
 }
 
@@ -137,6 +138,8 @@ string Message::str(Message::Type type)
         return "MODTIME";
     case SYNC:
         return "SYNC";
+    case DELETE:
+        return "DELETE";
     case END:
         return "END";
     case DONE:
