@@ -68,10 +68,10 @@ ServerNetwork::ServerNetwork(Connection *connection) {
         if (loser = connection->connect(smaller)) {
           loser->send(Message::T_COORD);
           loser->receive_ack();
-          // RETURN SOMETHING HERE TO BE MASTER
         } else {
           delete loser;
         }
+      // RETURN SOMETHING HERE TO SET SELF AS MASTER
       }
     } else {
       Message msg = the_bully->receive(expected_types);
