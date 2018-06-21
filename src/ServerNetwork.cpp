@@ -43,10 +43,13 @@ ServerNetwork::ServerNetwork(Connection *connection) {
       
       if i_am_smaller {
         // send ELECTION message to the candidate whose IP is bigger than mine
-        bully_connection = connection->connect(candidate)
-        bully_connection->send(Message::T_ELECTION);
-        bully_connection->receive_ack();
-
+        Connection* bully_connection = new Connection();
+        if (bully_connection->connect(candidate)) {
+          bully_connection->send(Message::T_ELECTION);
+          bully_connection->receive_ack();
+        } else {
+          delete bully_connection;
+        }
         // if I receive an ALIVE message I'm not the bully
         Message msg = bully_connection->receive(expected_types);
         if (msg.type == Message::T_ALIVE) {
@@ -61,9 +64,14 @@ ServerNetwork::ServerNetwork(Connection *connection) {
     if i_am_bully {
       // send COORD message to other servers saying that I'm the coordinator
       foreach (otherServers, string smaller) {
-        loser = connection->connect(smaller)
-        loser->send(Message::T_COORD);
-        loser->receive_ack();
+        Connection* loser = new Connection();
+        if (loser = connection->connect(smaller)) {
+          loser->send(Message::T_COORD);
+          loser->receive_ack();
+          // RETURN SOMETHING HERE TO BE MASTER
+        } else {
+          delete loser;
+        }
       }
     } else {
       Message msg = the_bully->receive(expected_types);
