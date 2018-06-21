@@ -100,6 +100,7 @@ void ServerSync::send_files_to_client()
     for (string &filename : files_to_delete)
     {
         log("Delete " + filename + "...");
+        remove(string(filename+"/"+parent->username).c_str());
         connection->send(Message::Type::DELETE, filename);
         log("ok");
     }
