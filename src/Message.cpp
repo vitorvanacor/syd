@@ -30,6 +30,7 @@ list<Message::Type> Message::type_request()
     req.push_back(Message::Type::LIST_SERVER);
     req.push_back(Message::Type::DOWNLOAD);
     req.push_back(Message::Type::UPLOAD);
+    req.push_back(Message::Type::NEW_USER);
     req.push_back(Message::Type::BYE);
     return req;
 }
@@ -144,6 +145,12 @@ string Message::str(Message::Type type)
         return "END";
     case DONE:
         return "DONE";
+    case BACKUP:
+        return "BACKUP";
+    case IP:
+        return "IP";
+    case NEW_USER:
+        return "NEW_USER";
     }
     return "INVALID_MESSAGE_TYPE";
 }

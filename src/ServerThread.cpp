@@ -39,6 +39,11 @@ void ServerThread::mainloop()
         if (request.type == Message::Type::UPLOAD)
         {
             receive_upload(request.content);
+            for (pair<string,Socket> backup : Server::backups)
+            {
+                Message msg = Message(NULL, NULL, request.type, username+"/"+request.content);
+                backup.second.send(msg.stringify());
+            }
         }
         else if (request.type == Message::Type::DOWNLOAD)
         {
@@ -47,6 +52,14 @@ void ServerThread::mainloop()
         else if (request.type == Message::Type::LIST_SERVER)
         {
             list_server();
+        }
+        else if (request.type == Message::Type::NEW_USER)
+        {
+            for (pair<string,Socket> backup : Server::backups)
+            {
+                Message msg = Message(NULL, NULL, Message::Type::IP, request.content);
+                backup.second.send(msg.stringify());
+            }
         }
         else if (request.type == Message::Type::BYE)
         {

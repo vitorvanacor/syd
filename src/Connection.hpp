@@ -6,6 +6,7 @@
 #include "Socket.hpp"
 #include "Message.hpp"
 #include "File.hpp"
+#include "Server.hpp"
 
 class Connection
 {

@@ -8,10 +8,16 @@
 class Server
 {
   public:
-    void start(int port);
+    Server(int port);
+    void start();
+    void backup(string hostname);
 
     Connection* listener;
+    Socket* sock;
+    int port;
     map<string, ServerThread *> threads;
+    static map<string, Socket> backups;
+    static list<string> client_ips;
 
   private:
     void receive_connection(Socket listener);

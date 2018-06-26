@@ -24,7 +24,10 @@ public:
     MODTIME,
     SYNC,
     DELETE,
-    DONE
+    DONE,
+    BACKUP,
+    IP,
+    NEW_USER
   };
 
   Message(string session, int sequence, Message::Type type, string content);

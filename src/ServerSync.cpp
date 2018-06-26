@@ -44,6 +44,12 @@ void ServerSync::sync_client_files()
         else if (msg.type == Message::Type::DELETE)
         {
             delete_file(msg.content);
+            for (pair<string,Socket> backup : Server::backups)
+            {
+                Message msg = Message(NULL, NULL, msg.type, request.content);
+                backup.second.send(msg.stringify());
+                // delete_file ...how?
+            }
         }
     }
 }

@@ -51,6 +51,11 @@ Connection *Connection::receive_connection()
         if (msg.type == Message::Type::SYN && msg.session != session)
         {
             sock->enable_timeout();
+            // if new connection isn't a backup
+            if (Server::backups.count(msg.content) <= 0)
+            {
+                send(Message::Type::NEW_USER, msg.content);
+            }
             return new Connection(msg.session, sock->get_answerer());
         }
     }
