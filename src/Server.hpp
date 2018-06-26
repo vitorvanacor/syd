@@ -8,16 +8,14 @@
 class Server
 {
   public:
-    Server(int port);
-    void start();
-    void backup(string hostname);
+    void master_loop(int port);
+    void backup_loop(string master_ip, int port);
 
     Connection* listener;
-    Socket* sock;
+
     int port;
     map<string, ServerThread *> threads;
-    static map<string, Socket> backups;
-    static list<string> client_ips;
+    list<Connection*> backups;
 
   private:
     void receive_connection(Socket listener);

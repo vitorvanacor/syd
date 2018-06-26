@@ -2,7 +2,7 @@
 
 #include "Server.hpp"
 
-ServerThread::ServerThread(Server* server, Connection *connection)
+ServerThread::ServerThread(Server *server, Connection *connection)
 {
     is_open = true;
     this->server = server;
@@ -39,11 +39,6 @@ void ServerThread::mainloop()
         if (request.type == Message::Type::UPLOAD)
         {
             receive_upload(request.content);
-            for (pair<string,Socket> backup : Server::backups)
-            {
-                Message msg = Message(NULL, NULL, request.type, username+"/"+request.content);
-                backup.second.send(msg.stringify());
-            }
         }
         else if (request.type == Message::Type::DOWNLOAD)
         {
@@ -53,24 +48,20 @@ void ServerThread::mainloop()
         {
             list_server();
         }
-        else if (request.type == Message::Type::NEW_USER)
-        {
-            for (pair<string,Socket> backup : Server::backups)
-            {
-                Message msg = Message(NULL, NULL, Message::Type::IP, request.content);
-                backup.second.send(msg.stringify());
-            }
-        }
         else if (request.type == Message::Type::BYE)
         {
             break;
         }
     }
     cout << "User " << username << " logged out." << endl;
+    for (Connection *backup : server->backups)
+    {
+        backup->send(Message::Type::CLIENT_DISCONNECT, connection->ip);
+    }
     is_open = false;
 }
 
-void ServerThread::receive_upload(string filename, Connection* connection)
+void ServerThread::receive_upload(string filename, Connection *connection)
 {
     if (!connection)
     {
@@ -82,6 +73,11 @@ void ServerThread::receive_upload(string filename, Connection* connection)
         connection->send(Message::Type::OK);
         cout << username << " is uploading " << filename << "..." << endl;
         connection->receive_file(filepath);
+        for (Connection *backup : server->backups)
+        {
+            backup->send(Message::Type::UPLOAD, filepath);
+            backup->send_file(filepath);
+        }
         unlock_file(filename);
         cout << username << " uploaded " << filename << endl;
     }
@@ -93,7 +89,7 @@ void ServerThread::receive_upload(string filename, Connection* connection)
     }
 }
 
-void ServerThread::send_download(string filename, Connection* connection)
+void ServerThread::send_download(string filename, Connection *connection)
 {
     if (!connection)
     {

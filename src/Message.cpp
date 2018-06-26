@@ -30,7 +30,6 @@ list<Message::Type> Message::type_request()
     req.push_back(Message::Type::LIST_SERVER);
     req.push_back(Message::Type::DOWNLOAD);
     req.push_back(Message::Type::UPLOAD);
-    req.push_back(Message::Type::NEW_USER);
     req.push_back(Message::Type::BYE);
     return req;
 }
@@ -59,6 +58,16 @@ list<Message::Type> Message::type_file()
     fil.push_back(Message::Type::FILE);
     fil.push_back(Message::Type::END);
     return fil;
+}
+
+list<Message::Type> Message::type_backup()
+{
+    list<Message::Type> bac;
+    bac.push_back(Message::Type::UPLOAD);
+    bac.push_back(Message::Type::DELETE);
+    bac.push_back(Message::Type::CLIENT_CONNECT);
+    bac.push_back(Message::Type::CLIENT_DISCONNECT);
+    return bac;
 }
 
 void Message::print(char direction)
@@ -147,10 +156,10 @@ string Message::str(Message::Type type)
         return "DONE";
     case BACKUP:
         return "BACKUP";
-    case IP:
-        return "IP";
-    case NEW_USER:
-        return "NEW_USER";
+    case CLIENT_CONNECT:
+        return "CLIENT_CONNECT";
+    case CLIENT_DISCONNECT:
+        return "CLIENT_DISCONNECT";
     }
     return "INVALID_MESSAGE_TYPE";
 }

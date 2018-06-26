@@ -1,66 +1,57 @@
 #include "Server.hpp"
 
-Server::Server(int port)
-{
-    sock = new Socket(port);
-    this->port = port;
-}
-
-void Server::start()
+void Server::master_loop(int port)
 {
     listener = new Connection(port);
-    sock->bind_server();
     cout << "Listening on port " << port << " for connections..." << endl;
     while (true)
     {
         debug("Waiting for connection", __FILE__, __LINE__, Color::RED);
         Connection *connection = listener->receive_connection();
 
-        Message r_msg = Message::parse(sock->receive());
-        if (r_msg.type == Message::Type::BACKUP)
-        {
-            Socket backup_socket = Socket(port);
-            backup_socket.set_host(r_msg.content);
-            Server::backups[r_msg.content] = backup_socket;
-        }
-
         delete_closed_threads();
-        if (!threads.count(connection->session)) // If session doesn't exist
+
+        if (connection->session.at(0) == 'B') // If it's a backup connection
+        {
+            backups.push_back(connection);
+        }
+        else if (!threads.count(connection->session)) // If new client connection
         {
             ServerThread *new_thread = new ServerThread(this, connection);
             new_thread->start();
             threads[connection->session] = new_thread;
+            for (Connection* backup : backups)
+            {
+                backup->send(Message::Type::CLIENT_CONNECT, connection->ip);
+            }
         }
     }
 }
 
-void Server::backup(string host_master)
+void Server::backup_loop(string master_ip, int port)
 {
-    sock->set_host(host_master);
-
-    Message msg = Message(NULL, NULL, Message::Type::BACKUP, "meu ip");
-    sock->send(msg.stringify());
-
-    sock->bind_server();
-    while(true)
+    listener = new Connection(master_ip, port, true);
+    while (true)
     {
-        Message r_msg = Message::parse(sock->receive());
-        
-        if (r_msg.type == Message::Type::UPLOAD)
-        {
-            listener = new Connection(host_master, port);
-            listener->send(Message::Type::DOWNLOAD, r_msg.content);
-            listener->receive(Message::Type::OK);
-            listener->receive_file(dirpath + "/" + filename);
-            delete listener;
-        }
-        else if (r_msg.type == Message::Type::IP)
-        {
-            Server::client_ips.push_back(r_msg.content);
-        }
-        else if (r_msg.type == Message::Type::DELETE)
-        {
+        Message msg = listener->receive(Message::type_backup());
 
+        if (msg.type == Message::Type::UPLOAD)
+        {
+            string filepath = msg.content;
+            listener->receive_file(filepath);
+        }
+        else if (msg.type == Message::Type::DELETE)
+        {
+            string filepath = msg.content;
+            remove(filepath.c_str());
+        }
+        else if (msg.type == Message::Type::CLIENT_CONNECT)
+        {
+            threads[msg.content] = NULL;
+        }
+        else if (msg.type == Message::Type::CLIENT_DISCONNECT)
+        {
+            threads.erase(msg.content);
         }
     }
 }
@@ -90,6 +81,23 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[1]);
     }
-    Server* server = new Server(port);
-    server->start();
+    string master = "";
+    string my_ip = get_ip();
+    for (string &ip : ip_list())
+    {
+        if (ip > my_ip)
+        {
+            master = ip;
+            break;
+        }
+    }
+    Server *server = new Server();
+    if (master.empty())
+    {
+        server->master_loop(port);
+    }
+    else
+    {
+        server->backup_loop(master, port);
+    }
 }

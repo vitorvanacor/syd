@@ -44,12 +44,6 @@ void ServerSync::sync_client_files()
         else if (msg.type == Message::Type::DELETE)
         {
             delete_file(msg.content);
-            for (pair<string,Socket> backup : Server::backups)
-            {
-                Message msg = Message(NULL, NULL, msg.type, request.content);
-                backup.second.send(msg.stringify());
-                // delete_file ...how?
-            }
         }
     }
 }
@@ -90,9 +84,14 @@ void ServerSync::delete_file(string filename)
                 thread->server_sync->files_to_delete.push_back(filename);
             }
         }
+
         log("ok");
         unlock_file(filename);
         files_not_synced.remove(filename);
+        for (Connection *backup : parent->server->backups)
+        {
+            backup->send(Message::Type::DELETE, parent->username + "/" + filename);
+        }
     }
     else
     {
@@ -106,7 +105,7 @@ void ServerSync::send_files_to_client()
     for (string &filename : files_to_delete)
     {
         log("Delete " + filename + "...");
-        remove(string(filename+"/"+parent->username).c_str());
+        remove(string(filename + "/" + parent->username).c_str());
         connection->send(Message::Type::DELETE, filename);
         log("ok");
     }

@@ -26,8 +26,8 @@ public:
     DELETE,
     DONE,
     BACKUP,
-    IP,
-    NEW_USER
+    CLIENT_CONNECT,
+    CLIENT_DISCONNECT
   };
 
   Message(string session, int sequence, Message::Type type, string content);
@@ -39,6 +39,7 @@ public:
   static list<Message::Type> type_sync();
   static list<Message::Type> type_action();
   static list<Message::Type> type_file();
+  static list<Message::Type> type_backup();
   static Message parse(string msg);
 
   Message::Type type;

@@ -7,10 +7,14 @@ Connection::Connection()
     last_sequence_received = -1;
 }
 
-Connection::Connection(string hostname, int port) : Connection()
+Connection::Connection(string hostname, int port, bool is_backup) : Connection()
 {
     sock = new Socket(port);
     sock->set_host(hostname);
+    if (is_backup)
+    {
+        session.insert(0, "B");
+    }
     connect();
 }
 
@@ -51,19 +55,16 @@ Connection *Connection::receive_connection()
         if (msg.type == Message::Type::SYN && msg.session != session)
         {
             sock->enable_timeout();
-            // if new connection isn't a backup
-            if (Server::backups.count(msg.content) <= 0)
-            {
-                send(Message::Type::NEW_USER, msg.content);
-            }
-            return new Connection(msg.session, sock->get_answerer());
+            Connection* new_connection = new Connection(msg.session, sock->get_answerer());
+            new_connection->ip = msg.content;
+            return new_connection;
         }
     }
 }
 
 void Connection::connect()
 {
-    send(Message::Type::SYN);
+    send(Message::Type::SYN, get_ip());
     sock->set_to_answer(sock);
 }
 

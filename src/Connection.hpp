@@ -6,14 +6,13 @@
 #include "Socket.hpp"
 #include "Message.hpp"
 #include "File.hpp"
-#include "Server.hpp"
 
 class Connection
 {
 public:
   Connection();
   Connection(int port);
-  Connection(string hostname, int port);
+  Connection(string hostname, int port, bool is_backup = false);
   Connection(string session, Socket* sock);
   ~Connection();
   static Connection *listener(int port);
@@ -40,6 +39,7 @@ public:
 
   string session;
   Socket *sock;
+  string ip;
 
 private:
   void just_send(Message::Type type, string content = "");
