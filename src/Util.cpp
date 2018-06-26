@@ -133,3 +133,24 @@ void print_table(string table)
         cout << endl;
     }
 }
+
+string get_ip()
+{
+    string ip;
+    ifstream file("servers.txt");
+    getline(file, ip);
+    return ip;
+}
+
+list<string> ip_list()
+{
+    string ip;
+    list<string> ips;
+    ifstream file("servers.txt");
+    getline(file, ip); // skip first line (own IP)
+    while (getline(file, ip))
+    {
+        ips.push_back(ip);
+    }
+    return ips;
+}

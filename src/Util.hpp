@@ -52,6 +52,9 @@ string without_extension(string filename);
 bool contains(list<string> string_list, string value);
 string time_to_string(time_t timestamp);
 
+string get_ip();
+list<string> ip_list();
+
 enum Color
 {
   RED = 31,
