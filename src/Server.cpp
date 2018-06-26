@@ -43,6 +43,25 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[1]);
     }
+    string my_ip = get_ip();
+    cout << "MY IP IS " << my_ip << endl;
+    string master = "";
+    for (string& ip : ip_list())
+    {
+        if (ip > my_ip)
+        {
+            master = ip;
+            break;
+        }
+    }
+    if (master.empty())
+    {
+        cout << "I AM THE MASTER" << endl;
+    }
+    else
+    {
+        cout << "MY MASTER IS " << master << endl;
+    }
     Server* server = new Server();
     server->start(port);
 }
