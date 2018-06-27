@@ -2,12 +2,19 @@
 
 #include "ClientSync.hpp"
 
+Client::Client(string username, string hostname, int port) : Thread()
+{
+    this->username = username;
+    this->hostname = hostname;
+    this->port = port;
+}
+
 Client::~Client()
 {
     delete connection;
 }
 
-void Client::start(string username, string hostname, int port)
+void* Client::run()
 {
     cout << "Connecting to " << hostname << ":" << port << " ..." << endl;
     connection = new Connection(hostname, port);
@@ -16,7 +23,7 @@ void Client::start(string username, string hostname, int port)
     user_dir = HOME + "/sync_dir_" + username;
     File::create_directory(user_dir);
 
-    ClientSync* client_sync = new ClientSync(this);
+    ClientSync *client_sync = new ClientSync(this);
     client_sync->start();
     cout << "Successfully logged in as " << username << "!" << endl;
 
@@ -74,7 +81,7 @@ void Client::upload_file(string filename, string dirpath, Connection *connection
     {
         dirpath = File::working_directory();
     }
-    if (!File(dirpath+"/"+filename).exists())
+    if (!File(dirpath + "/" + filename).exists())
     {
         cout << "File not found at " << dirpath << endl;
         return;
@@ -88,7 +95,7 @@ void Client::upload_file(string filename, string dirpath, Connection *connection
         connection->send(Message::Type::UPLOAD, filename);
         connection->receive(Message::Type::OK);
         cout << "Uploading " << filename << "..." << endl;
-        connection->send_file(dirpath+"/"+filename);
+        connection->send_file(dirpath + "/" + filename);
         cout << filename << " uploaded successfully!" << endl;
     }
     catch (ResponseException &e)
@@ -135,6 +142,17 @@ void Client::close_session()
     cout << "Successfully logged out!" << endl;
 }
 
+string listen_new_master(Client* client)
+{
+    Socket* sock = new Socket(4001);
+    sock->bind_server();
+    cout << "OUVINDO NOVO MESTER" << endl;
+    string new_master = sock->receive();
+    cout << "NEW MASTER " << new_master << endl;
+    delete client;
+    return new_master;
+}
+
 int main(int argc, char *argv[])
 {
     srand(time(NULL));
@@ -154,7 +172,11 @@ int main(int argc, char *argv[])
     {
         port = atoi(argv[3]);
     }
-
-    Client client;
-    client.start(username, hostname, port);
+    string master = hostname;
+    while (true)
+    {
+        Client *client = new Client(username, master, port);
+        client->start();
+        master = listen_new_master(client);
+    }
 }

@@ -3,6 +3,7 @@
 void Server::master_loop(int port, list<string> client_ips)
 {
     listener = new Connection(port);
+    listener->sock->set_timeout(3);
     listener->resend_on_timeout = false;
 
     notify_clients(client_ips);
@@ -65,7 +66,7 @@ void Server::backup_loop(string master_ip, int port)
     {
         try
         {
-            listener->sock->set_timeout(10);
+            listener->sock->set_timeout(5);
             Message msg = listener->receive(Message::type_backup());
 
             if (msg.type == Message::Type::UPLOAD)
@@ -97,6 +98,10 @@ void Server::backup_loop(string master_ip, int port)
                 File::create_directory(msg.content);
                 listener->receive_ack();
             }
+            else if (msg.type == Message::Type::HEARTBEAT)
+            {
+                cout << "recebeu HEARTBEAT" << endl;
+            }
         }
         catch (timeout_exception &e)
         {
@@ -122,6 +127,7 @@ string Server::election()
 {
     Socket *sock = new Socket(4001);
     sock->bind_server();
+    sock->set_timeout(7);
     string my_ip = get_ip();
     for (string &ip : ip_list())
     {
@@ -133,20 +139,27 @@ string Server::election()
     }
     while (true)
     {
-        string msg = sock->receive();
-        if (msg == "ANSWER")
+        try
         {
-            continue;
+            string msg = sock->receive();
+            if (msg == "ANSWER")
+            {
+                continue;
+            }
+            else if (msg == "ELECTION")
+            {
+                sock->set_to_answer(sock);
+                sock->send("ANSWER");
+            }
+            else
+            {
+                // Se receber um IP, é o do novo coordinator
+                return msg;
+            }
         }
-        else if (msg == "ELECTION")
+        catch (timeout_exception &e)
         {
-            sock->set_to_answer(sock);
-            sock->send("ANSWER");
-        }
-        else
-        {
-            // Se receber um IP, é o do novo coordinator
-            return msg;
+            return "";
         }
     }
 }

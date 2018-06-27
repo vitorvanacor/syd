@@ -3,16 +3,22 @@
 
 #include "Util.hpp"
 
+#include "Thread.hpp"
 #include "Connection.hpp"
 
-class Client
+class Client : public Thread
 {
   public:
+    Client(string username, string hostname, int port);
     ~Client();
-    void start(string username, string hostname, int port);
+    void *run();
+    
     void upload_file(string filename, string dirpath = "", Connection* connection = NULL);
     void download_file(string filename, string dirpath = "", Connection* connection = NULL);
 
+    string username;
+    string hostname;
+    int port;
     Connection *connection;
     string user_dir;
 
