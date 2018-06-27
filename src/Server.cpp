@@ -29,14 +29,17 @@ void Server::master_loop(int port, list<string> client_ips)
                 ServerThread *new_thread = new ServerThread(this, connection);
                 new_thread->start();
                 threads[connection->session] = new_thread;
+                cout << "Connecttion ip " << connection->ip << endl;
                 for (Connection *backup : backups)
                 {
+               
                     backup->send(Message::Type::CLIENT_CONNECT, connection->ip);
                 }
             }
         }
         catch (timeout_exception &e)
         {
+            cout << "SENDING HEARTBEAT" << endl;
             for (Connection *backup : backups)
             {
                 backup->send(Message::Type::HEARTBEAT);
@@ -47,7 +50,7 @@ void Server::master_loop(int port, list<string> client_ips)
 
 void Server::notify_clients(list<string> client_ips)
 {
-    Socket *sock = new Socket(4001);
+    Socket *sock = new Socket(4002);
     string my_ip = get_ip();
     for (string &client_ip : client_ips)
     {
@@ -113,13 +116,13 @@ void Server::backup_loop(string master_ip, int port)
             else
             {
                 delete listener;
-                listener = new Connection(new_master, port);
+                listener = new Connection(new_master, port, true);
             }
         }
     }
     if (!is_backup)
     {
-        master_loop(port);
+        master_loop(port, client_ips);
     }
 }
 

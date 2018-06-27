@@ -142,11 +142,9 @@ void Client::close_session()
     cout << "Successfully logged out!" << endl;
 }
 
-string listen_new_master(Client* client)
+string listen_new_master(Client* client, Socket* sock)
 {
-    Socket* sock = new Socket(4001);
-    sock->bind_server();
-    cout << "OUVINDO NOVO MESTER" << endl;
+    cout << "OUVINDO NOVO MESTRE" << endl;
     string new_master = sock->receive();
     cout << "NEW MASTER " << new_master << endl;
     delete client;
@@ -173,10 +171,12 @@ int main(int argc, char *argv[])
         port = atoi(argv[3]);
     }
     string master = hostname;
+    Socket* sock = new Socket(4002);
+    sock->bind_server();
     while (true)
     {
         Client *client = new Client(username, master, port);
         client->start();
-        master = listen_new_master(client);
+        master = listen_new_master(client, sock);
     }
 }

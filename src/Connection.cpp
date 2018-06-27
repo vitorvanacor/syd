@@ -47,7 +47,7 @@ Connection *Connection::create_connection()
 
 Connection *Connection::receive_connection()
 {
-    sock->disable_timeout();
+    //sock->disable_timeout();
     while (true)
     {
         string msg_s = sock->receive();
@@ -55,7 +55,8 @@ Connection *Connection::receive_connection()
         msg.print('<');
         if (msg.type == Message::Type::SYN && msg.session != session)
         {
-            sock->enable_timeout();
+            cout << "CONTENT " << msg.content << endl;
+            //sock->enable_timeout();
             Connection *new_connection = new Connection(msg.session, sock->get_answerer());
             new_connection->ip = msg.content;
             return new_connection;
