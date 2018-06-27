@@ -40,6 +40,7 @@ public:
   string session;
   Socket *sock;
   string ip;
+  bool resend_on_timeout;
 
 private:
   void just_send(Message::Type type, string content = "");

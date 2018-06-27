@@ -68,6 +68,7 @@ list<Message::Type> Message::type_backup()
     bac.push_back(Message::Type::CLIENT_CONNECT);
     bac.push_back(Message::Type::CLIENT_DISCONNECT);
     bac.push_back(Message::Type::LOGIN);
+    bac.push_back(Message::Type::HEARTBEAT);
     return bac;
 }
 
@@ -161,6 +162,8 @@ string Message::str(Message::Type type)
         return "CLIENT_CONNECT";
     case CLIENT_DISCONNECT:
         return "CLIENT_DISCONNECT";
+    case HEARTBEAT:
+        return "HEARTBEAT";
     }
     return "INVALID_MESSAGE_TYPE";
 }

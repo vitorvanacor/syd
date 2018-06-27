@@ -27,7 +27,8 @@ public:
     DONE,
     BACKUP,
     CLIENT_CONNECT,
-    CLIENT_DISCONNECT
+    CLIENT_DISCONNECT,
+    HEARTBEAT
   };
 
   Message(string session, int sequence, Message::Type type, string content);

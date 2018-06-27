@@ -5,6 +5,7 @@ Connection::Connection()
     session = to_string(rand() % 10000);
     last_sequence_sent = -1;
     last_sequence_received = -1;
+    resend_on_timeout = true;
 }
 
 Connection::Connection(string hostname, int port, bool is_backup) : Connection()
@@ -24,7 +25,7 @@ Connection::Connection(int port)
     sock->bind_server();
 }
 
-Connection::Connection(string session, Socket* sock) : Connection()
+Connection::Connection(string session, Socket *sock) : Connection()
 {
     this->session = session;
     this->sock = sock;
@@ -36,9 +37,9 @@ Connection::~Connection()
     delete this->sock;
 }
 
-Connection* Connection::create_connection()
+Connection *Connection::create_connection()
 {
-    Connection* new_connection = new Connection();
+    Connection *new_connection = new Connection();
     new_connection->sock = sock->get_answerer();
     new_connection->connect();
     return new_connection;
@@ -55,7 +56,7 @@ Connection *Connection::receive_connection()
         if (msg.type == Message::Type::SYN && msg.session != session)
         {
             sock->enable_timeout();
-            Connection* new_connection = new Connection(msg.session, sock->get_answerer());
+            Connection *new_connection = new Connection(msg.session, sock->get_answerer());
             new_connection->ip = msg.content;
             return new_connection;
         }
@@ -231,7 +232,14 @@ Message Connection::just_receive()
         }
         catch (timeout_exception &e)
         {
-            resend();
+            if (resend_on_timeout)
+            {
+                resend();
+            }
+            else
+            {
+                throw e;
+            }
         }
         catch (runtime_error &e)
         {

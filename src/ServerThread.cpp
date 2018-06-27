@@ -22,6 +22,7 @@ void *ServerThread::run()
     for (Connection *backup : server->backups)
     {
         backup->send(Message::Type::LOGIN, username);
+        backup->send_ack();
     }
 
     server_sync = new ServerSync(this);

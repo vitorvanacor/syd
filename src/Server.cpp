@@ -1,32 +1,57 @@
 #include "Server.hpp"
 
-void Server::master_loop(int port)
+void Server::master_loop(int port, list<string> client_ips)
 {
     listener = new Connection(port);
+    listener->resend_on_timeout = false;
+
+    notify_clients(client_ips);
+
     cout << "Listening on port " << port << " for connections..." << endl;
     while (true)
     {
         debug("Waiting for connection", __FILE__, __LINE__, Color::RED);
-        Connection *connection = listener->receive_connection();
-
-        delete_closed_threads();
-
-        if (connection->session.at(0) == 'B') // If it's a backup connection
+        try
         {
-            cout << "Backup " << connection->ip << " connected" << endl;
-            connection->confirm();
-            backups.push_back(connection);
-        }
-        else if (!threads.count(connection->session)) // If new client connection
-        {
-            ServerThread *new_thread = new ServerThread(this, connection);
-            new_thread->start();
-            threads[connection->session] = new_thread;
-            for (Connection *backup : backups)
+            Connection *connection = listener->receive_connection();
+
+            delete_closed_threads();
+
+            if (connection->session.at(0) == 'B') // If it's a backup connection
             {
-                backup->send(Message::Type::CLIENT_CONNECT, connection->ip);
+                cout << "Backup " << connection->ip << " connected" << endl;
+                connection->confirm();
+                backups.push_back(connection);
+            }
+            else if (!threads.count(connection->session)) // If new client connection
+            {
+                ServerThread *new_thread = new ServerThread(this, connection);
+                new_thread->start();
+                threads[connection->session] = new_thread;
+                for (Connection *backup : backups)
+                {
+                    backup->send(Message::Type::CLIENT_CONNECT, connection->ip);
+                }
             }
         }
+        catch (timeout_exception &e)
+        {
+            for (Connection *backup : backups)
+            {
+                backup->send(Message::Type::HEARTBEAT);
+            }
+        }
+    }
+}
+
+void Server::notify_clients(list<string> client_ips)
+{
+    Socket *sock = new Socket(4001);
+    string my_ip = get_ip();
+    for (string &client_ip : client_ips)
+    {
+        sock->set_host(client_ip);
+        sock->send(my_ip);
     }
 }
 
@@ -34,37 +59,94 @@ void Server::backup_loop(string master_ip, int port)
 {
     list<string> client_ips;
     listener = new Connection(master_ip, port, true);
+    listener->resend_on_timeout = false;
+    bool is_backup = true;
+    while (is_backup)
+    {
+        try
+        {
+            listener->sock->set_timeout(10);
+            Message msg = listener->receive(Message::type_backup());
+
+            if (msg.type == Message::Type::UPLOAD)
+            {
+                string filepath = msg.content;
+                cout << "Backing up " << filepath << "...";
+                listener->receive_file(filepath);
+                cout << " Ok!" << endl;
+            }
+            else if (msg.type == Message::Type::DELETE)
+            {
+                string filepath = msg.content;
+                cout << "Deleting " << filepath;
+                remove(filepath.c_str());
+                cout << " Ok!" << endl;
+            }
+            else if (msg.type == Message::Type::CLIENT_CONNECT)
+            {
+                cout << "Backing up connection with " << msg.content << endl;
+                client_ips.push_back(msg.content);
+            }
+            else if (msg.type == Message::Type::CLIENT_DISCONNECT)
+            {
+                cout << msg.content << " disconnected" << endl;
+                client_ips.remove(msg.content);
+            }
+            else if (msg.type == Message::Type::LOGIN)
+            {
+                File::create_directory(msg.content);
+                listener->receive_ack();
+            }
+        }
+        catch (timeout_exception &e)
+        {
+            string new_master = election();
+            if (new_master.empty()) // I am master
+            {
+                is_backup = false;
+            }
+            else
+            {
+                delete listener;
+                listener = new Connection(new_master, port);
+            }
+        }
+    }
+    if (!is_backup)
+    {
+        master_loop(port);
+    }
+}
+
+string Server::election()
+{
+    Socket *sock = new Socket(4001);
+    sock->bind_server();
+    string my_ip = get_ip();
+    for (string &ip : ip_list())
+    {
+        if (ip > my_ip)
+        {
+            sock->set_host(ip);
+            sock->send("ELECTION");
+        }
+    }
     while (true)
     {
-        Message msg = listener->receive(Message::type_backup());
-
-        if (msg.type == Message::Type::UPLOAD)
+        string msg = sock->receive();
+        if (msg == "ANSWER")
         {
-            string filepath = msg.content;
-            cout << "Backing up " << filepath << "...";
-            listener->receive_file(filepath);
-            cout << " Ok!" << endl;
+            continue;
         }
-        else if (msg.type == Message::Type::DELETE)
+        else if (msg == "ELECTION")
         {
-            string filepath = msg.content;
-            cout << "Deleting " << filepath;
-            remove(filepath.c_str());
-            cout << " Ok!" << endl;
+            sock->set_to_answer(sock);
+            sock->send("ANSWER");
         }
-        else if (msg.type == Message::Type::CLIENT_CONNECT)
+        else
         {
-            cout << "Backing up connection with " << msg.content << endl;
-            client_ips.push_back(msg.content);
-        }
-        else if (msg.type == Message::Type::CLIENT_DISCONNECT)
-        {
-            cout << msg.content << " disconnected" << endl;
-            client_ips.remove(msg.content);
-        }
-        else if (msg.type == Message::Type::LOGIN)
-        {
-            File::create_directory(msg.content);
+            // Se receber um IP, é o do novo coordinator
+            return msg;
         }
     }
 }

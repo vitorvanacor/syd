@@ -7,18 +7,19 @@
 
 class Server
 {
-  public:
-    void master_loop(int port);
+public:
+    void master_loop(int port, list<string> client_ips = {});
     void backup_loop(string master_ip, int port);
 
-    Connection* listener;
+    Connection *listener;
 
     int port;
     map<string, ServerThread *> threads;
-    list<Connection*> backups;
+    list<Connection *> backups;
 
-  private:
-    void receive_connection(Socket listener);
+private:
+    string election();
+    void notify_clients(list<string> client_ips);
     void delete_closed_threads();
 };
 
