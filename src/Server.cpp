@@ -13,6 +13,8 @@ void Server::master_loop(int port)
 
         if (connection->session.at(0) == 'B') // If it's a backup connection
         {
+            cout << "Backup " << connection->ip << " connected" << endl;
+            connection->confirm();
             backups.push_back(connection);
         }
         else if (!threads.count(connection->session)) // If new client connection
@@ -20,7 +22,7 @@ void Server::master_loop(int port)
             ServerThread *new_thread = new ServerThread(this, connection);
             new_thread->start();
             threads[connection->session] = new_thread;
-            for (Connection* backup : backups)
+            for (Connection *backup : backups)
             {
                 backup->send(Message::Type::CLIENT_CONNECT, connection->ip);
             }
@@ -30,6 +32,7 @@ void Server::master_loop(int port)
 
 void Server::backup_loop(string master_ip, int port)
 {
+    list<string> client_ips;
     listener = new Connection(master_ip, port, true);
     while (true)
     {
@@ -38,20 +41,30 @@ void Server::backup_loop(string master_ip, int port)
         if (msg.type == Message::Type::UPLOAD)
         {
             string filepath = msg.content;
+            cout << "Backing up " << filepath << "...";
             listener->receive_file(filepath);
+            cout << " Ok!" << endl;
         }
         else if (msg.type == Message::Type::DELETE)
         {
             string filepath = msg.content;
+            cout << "Deleting " << filepath;
             remove(filepath.c_str());
+            cout << " Ok!" << endl;
         }
         else if (msg.type == Message::Type::CLIENT_CONNECT)
         {
-            threads[msg.content] = NULL;
+            cout << "Backing up connection with " << msg.content << endl;
+            client_ips.push_back(msg.content);
         }
         else if (msg.type == Message::Type::CLIENT_DISCONNECT)
         {
-            threads.erase(msg.content);
+            cout << msg.content << " disconnected" << endl;
+            client_ips.remove(msg.content);
+        }
+        else if (msg.type == Message::Type::LOGIN)
+        {
+            File::create_directory(msg.content);
         }
     }
 }

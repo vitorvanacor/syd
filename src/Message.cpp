@@ -67,6 +67,7 @@ list<Message::Type> Message::type_backup()
     bac.push_back(Message::Type::DELETE);
     bac.push_back(Message::Type::CLIENT_CONNECT);
     bac.push_back(Message::Type::CLIENT_DISCONNECT);
+    bac.push_back(Message::Type::LOGIN);
     return bac;
 }
 

@@ -22,6 +22,7 @@ void *ClientSync::run()
         log("--- Receive from server");
         receive_files_from_server();
         log("--- Sync Done");
+        filenames = File::list_directory_filenames(client->user_dir);
         sleep(5);
     }
 }
@@ -48,13 +49,13 @@ void ClientSync::sync_own_files()
             catch (ResponseException &e)
             {
                 log("Delete failed, trying again");
+                sleep(2);
                 delete_ok = false;
             }
         }
         log("ok");
     }
     connection->send(Message::Type::DONE);
-    filenames = File::list_directory_filenames(client->user_dir);
 }
 
 void ClientSync::sync_file(File file)

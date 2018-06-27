@@ -19,6 +19,10 @@ void *ServerThread::run()
     connection->confirm();
     username = connection->receive_content(Message::Type::LOGIN);
     File::create_directory(username);
+    for (Connection *backup : server->backups)
+    {
+        backup->send(Message::Type::LOGIN, username);
+    }
 
     server_sync = new ServerSync(this);
     server_sync->start();
